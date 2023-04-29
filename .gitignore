@@ -5,8 +5,11 @@
 *.pytest_cache
 *.ipynb_checkpoints/
 dataset/
+!dataset/README.md
 MixFormer/models/
+!MixFormer/models/README.md
 results/
+!results/README.md
 /eval/test
 .eval/log_test.txt
 .eval/log_test_vot2016.txt
@@ -21,3 +24,4 @@ pytracking/tracking_results/
 pytracking/result_plots/
 pytracking/evaluation/local.py
 pytracking/run_local.py
+lib/pysot/utils/build/

@@ -6,7 +6,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
 from lib.models.mixformer_cvt.head import MLP
-from external.PreciseRoIPooling.pytorch.prroi_pool import PrRoIPool2D
+
+# import sys
+# import subprocess
+# sys.path.insert(1, subprocess.getoutput("git rev-parse --show-toplevel"))
+# print('hi')
+# print(subprocess.getoutput("git rev-parse --show-toplevel"))
+# import time
+# time.sleep(1000)
+from MixFormer.external.PreciseRoIPooling.pytorch.prroi_pool import PrRoIPool2D
 from timm.models.layers import trunc_normal_
 
 class ScoreDecoder(nn.Module):

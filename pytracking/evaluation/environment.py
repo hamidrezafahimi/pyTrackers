@@ -1,6 +1,8 @@
 import importlib
 import os
-
+import sys
+import subprocess
+sys.path.insert(1, subprocess.getoutput("git rev-parse --show-toplevel"))
 
 class EnvSettings:
     def __init__(self):

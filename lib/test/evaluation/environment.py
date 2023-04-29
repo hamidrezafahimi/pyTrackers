@@ -1,11 +1,12 @@
 import importlib
 import os
-
+import subprocess
 
 class EnvSettings:
     def __init__(self):
         test_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-
+        self.save_dir = subprocess.getoutput("git rev-parse --show-toplevel") + '/MixFormer'
+        self.prj_dir = subprocess.getoutput("git rev-parse --show-toplevel") + '/MixFormer'
         self.results_path = '{}/tracking_results/'.format(test_path)
         self.segmentation_path = '{}/segmentation_results/'.format(test_path)
         self.network_path = '{}/networks/'.format(test_path)
@@ -107,6 +108,8 @@ def create_default_local_file_ITP_test(workspace_dir, data_dir, save_dir):
 
 def env_settings():
     env_module_name = 'lib.test.evaluation.local'
+    env_module = importlib.import_module(env_module_name)
+    return env_module.local_env_settings()
     try:
         env_module = importlib.import_module(env_module_name)
         return env_module.local_env_settings()
