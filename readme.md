@@ -28,32 +28,9 @@ Do in order:
 ```
 pip install --upgrade pip
 
-pip install numpy
-pip install matplotlib
-pip install opencv-python
-pip install scipy
-pip install mxnet
-pip install scikit-image
-pip install utm
-<!-- pip install torch==1.8.1 torchvision -->
-pip install jpeg4py
-pip install visdom
-pip install torchvision
-pip install spatial-correlation-sampler
-pip install tensorboardX
-pip install timm
-pip install einops
-pip install lmdb
-pip install easydict
+pip install -r requirements.txt
 ```
 
-<!--
-Should one do:
-
- pip install -r requirements.txt 
-
-too?
- -->
 <!-- 
 ```
 pip install --upgrade pip

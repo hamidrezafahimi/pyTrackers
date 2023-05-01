@@ -71,56 +71,56 @@ if __name__ == '__main__':
         tracker_ldes=PyTracker(img_dir,tracker_type='LDES',dataset_config=dataset_config)
         tracker_strcf=PyTracker(img_dir,tracker_type='STRCF',dataset_config=dataset_config)
         tracker_csrdcf=PyTracker(img_dir,tracker_type='CSRDCF',dataset_config=dataset_config)
-        # tracker_prdimp50=PyTracker(img_dir,tracker_type='PRDIMP50',dataset_config=dataset_config)
-        # tracker_kys=PyTracker(img_dir,tracker_type='KYS',dataset_config=dataset_config)
+        tracker_prdimp50=PyTracker(img_dir,tracker_type='PRDIMP50',dataset_config=dataset_config)
+        tracker_kys=PyTracker(img_dir,tracker_type='KYS',dataset_config=dataset_config)
         tracker_tomp=PyTracker(img_dir,tracker_type='TOMP',dataset_config=dataset_config)
-        # tracker_dimp50=PyTracker(img_dir,tracker_type='DIMP50',dataset_config=dataset_config)
-        # tracker_mixformer=PyTracker(img_dir,tracker_type='MIXFORMER_VIT',dataset_config=dataset_config)
+        tracker_dimp50=PyTracker(img_dir,tracker_type='DIMP50',dataset_config=dataset_config)
+        tracker_mixformer=PyTracker(img_dir,tracker_type='MIXFORMER_VIT',dataset_config=dataset_config)
 
-        # if tracker_mixformer.viot:
-        #     mixformer_preds=tracker_mixformer.tracking(verbose=True,video_path="../results/mixformer_{:s}_viot.mp4".format(data_name))
-        # else:
-        #     mixformer_preds=tracker_mixformer.tracking(verbose=True,video_path="../results/mixformer_{:s}.mp4".format(data_name))
-        # mixformer_results = {}
-        # mixformer_results[data_name] = {}
-        # mixformer_results[data_name]['tracker_mixformer_preds'] = []
-        # for mixformer_pred in mixformer_preds:
-        #     mixformer_results[data_name]['tracker_mixformer_preds'].append(list(mixformer_pred.astype(np.int)))
-        # if tracker_mixformer.viot:
-        #     write_results(data_name, 'mixformer', mixformer_results, viot="_viot")
-        # else:
-        #     write_results(data_name, 'mixformer', mixformer_results)
-        # print('mixformer done!')
+        if tracker_mixformer.viot:
+            mixformer_preds=tracker_mixformer.tracking(verbose=True,video_path="../results/mixformer_{:s}_viot.mp4".format(data_name))
+        else:
+            mixformer_preds=tracker_mixformer.tracking(verbose=True,video_path="../results/mixformer_{:s}.mp4".format(data_name))
+        mixformer_results = {}
+        mixformer_results[data_name] = {}
+        mixformer_results[data_name]['tracker_mixformer_preds'] = []
+        for mixformer_pred in mixformer_preds:
+            mixformer_results[data_name]['tracker_mixformer_preds'].append(list(mixformer_pred.astype(np.int)))
+        if tracker_mixformer.viot:
+            write_results(data_name, 'mixformer', mixformer_results, viot="_viot")
+        else:
+            write_results(data_name, 'mixformer', mixformer_results)
+        print('mixformer done!')
 
-        # if tracker_dimp50.viot:
-        #     dimp50_preds=tracker_dimp50.tracking(verbose=True,video_path="../results/dimp50_{:s}_viot.mp4".format(data_name))
-        # else:
-        #     dimp50_preds=tracker_dimp50.tracking(verbose=True,video_path="../results/dimp50_{:s}.mp4".format(data_name))
-        # dimp50_results = {}
-        # dimp50_results[data_name] = {}
-        # dimp50_results[data_name]['tracker_dimp50_preds'] = []
-        # for dimp50_pred in dimp50_preds:
-        #     dimp50_results[data_name]['tracker_dimp50_preds'].append(list(dimp50_pred.astype(np.int)))
-        # if tracker_dimp50.viot:
-        #     write_results(data_name, 'dimp50', dimp50_results, viot="_viot")
-        # else:
-        #     write_results(data_name, 'dimp50', dimp50_results)
-        # print('dimp50 done!')
+        if tracker_dimp50.viot:
+            dimp50_preds=tracker_dimp50.tracking(verbose=True,video_path="../results/dimp50_{:s}_viot.mp4".format(data_name))
+        else:
+            dimp50_preds=tracker_dimp50.tracking(verbose=True,video_path="../results/dimp50_{:s}.mp4".format(data_name))
+        dimp50_results = {}
+        dimp50_results[data_name] = {}
+        dimp50_results[data_name]['tracker_dimp50_preds'] = []
+        for dimp50_pred in dimp50_preds:
+            dimp50_results[data_name]['tracker_dimp50_preds'].append(list(dimp50_pred.astype(np.int)))
+        if tracker_dimp50.viot:
+            write_results(data_name, 'dimp50', dimp50_results, viot="_viot")
+        else:
+            write_results(data_name, 'dimp50', dimp50_results)
+        print('dimp50 done!')
         
-        # if tracker_kys.viot:
-        #     kys_preds=tracker_kys.tracking(verbose=True,video_path="../results/kys_{:s}_viot.mp4".format(data_name))
-        # else:
-        #     kys_preds=tracker_kys.tracking(verbose=True,video_path="../results/kys_{:s}.mp4".format(data_name))
-        # kys_results = {}
-        # kys_results[data_name] = {}
-        # kys_results[data_name]['tracker_kys_preds'] = []
-        # for kys_pred in kys_preds:
-        #     kys_results[data_name]['tracker_kys_preds'].append(list(kys_pred.astype(np.int)))
-        # if tracker_kys.viot:
-        #     write_results(data_name, 'kys', kys_results, viot="_viot")
-        # else:
-        #     write_results(data_name, 'kys', kys_results) 
-        # print('kys done!')
+        if tracker_kys.viot:
+            kys_preds=tracker_kys.tracking(verbose=True,video_path="../results/kys_{:s}_viot.mp4".format(data_name))
+        else:
+            kys_preds=tracker_kys.tracking(verbose=True,video_path="../results/kys_{:s}.mp4".format(data_name))
+        kys_results = {}
+        kys_results[data_name] = {}
+        kys_results[data_name]['tracker_kys_preds'] = []
+        for kys_pred in kys_preds:
+            kys_results[data_name]['tracker_kys_preds'].append(list(kys_pred.astype(np.int)))
+        if tracker_kys.viot:
+            write_results(data_name, 'kys', kys_results, viot="_viot")
+        else:
+            write_results(data_name, 'kys', kys_results) 
+        print('kys done!')
 
         if tracker_tomp.viot:
             tomp_preds=tracker_tomp.tracking(verbose=True,video_path="../results/tomp_{:s}_viot.mp4".format(data_name))
@@ -137,20 +137,20 @@ if __name__ == '__main__':
             write_results(data_name, 'tomp', tomp_results)
         print('tomp done!')
 
-        # if tracker_prdimp50.viot:
-        #     prdimp50_preds=tracker_prdimp50.tracking(verbose=True,video_path="../results/prdimp50_{:s}_viot.mp4".format(data_name))
-        # else:
-        #     prdimp50_preds=tracker_prdimp50.tracking(verbose=True,video_path="../results/prdimp50_{:s}.mp4".format(data_name))
-        # prdimp50_results = {}
-        # prdimp50_results[data_name] = {}
-        # prdimp50_results[data_name]['tracker_prdimp50_preds'] = []
-        # for prdimp50_pred in prdimp50_preds:
-        #     prdimp50_results[data_name]['tracker_prdimp50_preds'].append(list(prdimp50_pred.astype(np.int)))
-        # if tracker_prdimp50.viot:
-        #     write_results(data_name, 'prdimp50', prdimp50_results, viot="_viot")
-        # else:
-        #     write_results(data_name, 'prdimp50', prdimp50_results)
-        # print('prdimp50 done!')
+        if tracker_prdimp50.viot:
+            prdimp50_preds=tracker_prdimp50.tracking(verbose=True,video_path="../results/prdimp50_{:s}_viot.mp4".format(data_name))
+        else:
+            prdimp50_preds=tracker_prdimp50.tracking(verbose=True,video_path="../results/prdimp50_{:s}.mp4".format(data_name))
+        prdimp50_results = {}
+        prdimp50_results[data_name] = {}
+        prdimp50_results[data_name]['tracker_prdimp50_preds'] = []
+        for prdimp50_pred in prdimp50_preds:
+            prdimp50_results[data_name]['tracker_prdimp50_preds'].append(list(prdimp50_pred.astype(np.int)))
+        if tracker_prdimp50.viot:
+            write_results(data_name, 'prdimp50', prdimp50_results, viot="_viot")
+        else:
+            write_results(data_name, 'prdimp50', prdimp50_results)
+        print('prdimp50 done!')
 
         if tracker_kcf_hog.viot:
             kcf_hog_preds=tracker_kcf_hog.tracking(verbose=True,video_path="../results/kcf_{:s}_viot.mp4".format(data_name))

@@ -1,12 +1,16 @@
-cupy
+numpy==1.21.6
 matplotlib
-mxnet #via pip necessarily then maybe urllib3 and charset-normalizer via conda
-numba
+opencv-python
 scipy
-h5py
-colorama
-opencv_python
-Cython
-numpy
-tqdm
-Pillow
+mxnet
+scikit-image
+utm
+jpeg4py
+visdom
+torchvision
+spatial-correlation-sampler
+tensorboardX
+timm
+einops
+lmdb
+easydict
