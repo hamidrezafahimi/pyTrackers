@@ -1,12 +1,15 @@
 import importlib
 import os
-import subprocess
+import sys
+from pathlib import Path
+pth = str(Path(__file__).parent.resolve()) + "/../../.."
+sys.path.insert(2, pth)
 
 class EnvSettings:
     def __init__(self):
         test_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        self.save_dir = subprocess.getoutput("git rev-parse --show-toplevel") + '/MixFormer'
-        self.prj_dir = subprocess.getoutput("git rev-parse --show-toplevel") + '/MixFormer'
+        self.save_dir = pth + '/MixFormer'
+        self.prj_dir = pth + '/MixFormer'
         self.results_path = '{}/tracking_results/'.format(test_path)
         self.segmentation_path = '{}/segmentation_results/'.format(test_path)
         self.network_path = '{}/networks/'.format(test_path)
