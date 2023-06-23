@@ -25,14 +25,21 @@ if __name__ == '__main__':
     gts = get_ground_truthes_viot(data_path)
     # Crop ground-truth data sequence into init- and end-frames
     gts = gts[config_dict['start_frame'] - 1:config_dict['end_frame']]
-    # Convert gt data to int
-    viot_results_gts = [list(gt.astype(np.int)) for gt in gts]
+    # # Convert gt data to int
+    # viot_results_gts = [list(gt.astype(np.int)) for gt in gts]
 
     frame_list = get_img_list(data_path)
     frame_list.sort()
     states = get_states_data(data_path) ## VIOT
-
-    tracker_mixformer = PyTracker(data_path, _gts=gts, tracker_title=Trackers.MIXFORMERVIT,
+    tt = Trackers.MIXFORMER
+    tcfg = {}
+    tcfg['type'] = 'vit'
+    tcfg['model'] = 'mixformer_vit_base_online.pth.tar'
+    tcfg['search_area_scale'] = 4.0
+    tcfg['yaml_name'] = 'baseline'
+    tcfg['dataset_name'] = 'got10k_test'
+    tt.config = tcfg
+    tracker_mixformer = PyTracker(data_path, _gts=gts, tracker_title=tt,
                                   dataset_config=config_dict, fl=frame_list, sts=states, 
                                   ext_type=ExtType.viot)
     

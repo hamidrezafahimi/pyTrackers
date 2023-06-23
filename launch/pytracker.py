@@ -17,18 +17,16 @@ class PyTracker:
     def __init__(self, img_dir, tracker_title, dataset_config, _gts, fl, sts, ext_type):
         self.ext_type = ext_type
         self.img_dir = img_dir
-        self.tracker_title = tracker_title
-        self.trackFuncName = self.tracker_title.type.name + "_" + self.ext_type.name + "_track"
-        self.initFuncName = self.tracker_title.type.name + "_" + self.ext_type.name + "_init"
-        print(self.initFuncName)
-        print(self.trackFuncName)
-        input('q')
-        self.trackerName = self.tracker_title.name
+        self.trackerType = tracker_title
+        self.trackFuncName = self.trackerType.group.name + "_" + self.ext_type.name + "_track"
+        self.initFuncName = self.trackerType.group.name + "_init"
+        self.trackerName = self.trackerType.name
         self.frame_list = fl
         self.gts = _gts
         self.states = sts
         self.fov = dataset_config['fov']
         self.ethTracker = False
+        self.datasetCfg = dataset_config
 
         start_frame = dataset_config['start_frame']
         end_frame = dataset_config['end_frame']
@@ -36,41 +34,32 @@ class PyTracker:
         self.frame_list = self.frame_list[start_frame-1:end_frame]
         self.states = self.states[start_frame-1:end_frame]
 
-        from MixFormer.lib.test.tracker.mixformer_vit_online import MixFormerOnline
-        from MixFormer.lib.test.parameter.mixformer_vit_online import parameters
-
-        params = parameters('baseline', 'mixformer_vit_base_online.pth.tar', 4.0)
-        self.tracker = MixFormerOnline(params, 'got10k_test')
         self.ethTracker=True
-        self.ratio_thresh = dataset_config['ratio_tresh']['MIXFORMER_VIT']
-        self.interp_factor = dataset_config['interp_factor']['MIXFORMER_VIT']
         self.viot = dataset_config['ext_type'] == ExtType.viot
         self.extName = dataset_config['ext_type'].name
 
-    def getETHTracker(self, name, params):
-        param_module = importlib.import_module('pytracking.parameter.{}.{}'.format(name, params))
-        params = param_module.parameters()
-        params.tracker_name = name
-        params.param_name = params
+    # def getETHTracker(self, name, params):
+    #     param_module = importlib.import_module('pytracking.parameter.{}.{}'.format(name, params))
+    #     params = param_module.parameters()
+    #     params.tracker_name = name
+    #     params.param_name = params
 
-        tracker_module_abspath = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tracker', name))
-        tracker_module = importlib.import_module('pytracking.tracker.{}'.format(name))
-        tracker_class = tracker_module.get_tracker_class()
+    #     tracker_module_abspath = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tracker', name))
+    #     tracker_module = importlib.import_module('pytracking.tracker.{}'.format(name))
+    #     tracker_class = tracker_module.get_tracker_class()
 
-        tracker = tracker_class(params)
+    #     tracker = tracker_class(params)
 
-        if hasattr(tracker, 'initialize_features'):
-            tracker.initialize_features()
+    #     if hasattr(tracker, 'initialize_features'):
+    #         tracker.initialize_features()
+    #     return tracker
 
-        return tracker
-
-    def initETHTracker(self, frame, bbox):
-
-        x, y, w, h = bbox
-        init_state = [x, y, w, h]
-        box = {'init_bbox': init_state, 'init_object_ids': [1, ], 'object_ids': [1, ],
-                    'sequence_object_ids': [1, ]}
-        self.tracker.initialize(frame, box)
+    # def initETHTracker(self, frame, bbox):
+    #     x, y, w, h = bbox
+    #     init_state = [x, y, w, h]
+    #     box = {'init_bbox': init_state, 'init_object_ids': [1, ], 'object_ids': [1, ],
+    #                 'sequence_object_ids': [1, ]}
+    #     self.tracker.initialize(frame, box)
 
     # def doTrack(self, current_frame, verbose, est_loc, do_learning, viot=False):
     # 	if self.ethTracker:
@@ -115,8 +104,42 @@ class PyTracker:
         bbox=self.tracker.update(inp['current_frame'],vis=inp['verbose'])
         return bbox
 
-    def eth_init(self):
-        pass
+    def eth_init(self, frame, bbox):
+        param_module = importlib.import_module('pytracking.parameter.{}.{}'
+                                               .format(self.trackerType.tag, 
+                                                       self.trackerType.config))
+        params = param_module.parameters()
+        params.tracker_name = self.trackerType.tag
+        params.param_name = params
+        tracker_module = importlib.import_module('pytracking.tracker.{}'.
+                                                 format(self.trackerType.tag))
+        tracker_class = tracker_module.get_tracker_class()
+        self.tracker = tracker_class(params)
+        if hasattr(self.tracker, 'initialize_features'):
+            self.tracker.initialize_features()
+        x, y, w, h = bbox
+        init_state = [x, y, w, h]
+        box = {'init_bbox': init_state, 'init_object_ids': [1, ], 'object_ids': [1, ],
+               'sequence_object_ids': [1, ]}
+        self.tracker.initialize(frame, box)
+
+    def mxf_init(self, frame, bbox):
+        param_module = importlib.import_module(
+                                    'MixFormer.lib.test.parameter.mixformer_{}_online'
+                                    .format(self.trackerType.config['type']))
+        tracker_module = importlib.import_module(
+                                    'MixFormer.lib.test.tracker.mixformer_{}_online'
+                                    .format(self.trackerType.config['type']))
+        params = param_module.parameters(self.trackerType.config['yaml_name'], self.trackerType.config['model'], 
+                            self.trackerType.config['search_area_scale'])
+        self.tracker = tracker_module.MixFormerOnline(params, self.trackerType.config['dataset_name'])
+        self.ratio_thresh = self.datasetCfg['ratio_tresh']['MIXFORMER_VIT']
+        self.interp_factor = self.datasetCfg['interp_factor']['MIXFORMER_VIT']
+        x, y, w, h = bbox
+        init_state = [x, y, w, h]
+        box = {'init_bbox': init_state, 'init_object_ids': [1, ], 'object_ids': [1, ],
+               'sequence_object_ids': [1, ]}
+        self.tracker.initialize(frame, box)
 
     def cf_init(self):
         pass
@@ -131,10 +154,7 @@ class PyTracker:
         init_gt = np.array(self.init_gt)
         x1, y1, w, h =init_gt
         init_gt=tuple(init_gt)
-        if self.ethTracker:
-            self.initETHTracker(init_frame, init_gt)
-        else:
-            self.tracker.init(init_frame,init_gt)
+        getattr(self, self.initFuncName)(init_frame, init_gt)
         writer=None
         if verbose is True and video_path is not None:
             writer = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30, (init_frame.shape[1], init_frame.shape[0]))
@@ -172,7 +192,7 @@ class PyTracker:
                 stop=bbox[2] > width or bbox[3] > height
 
                 ## evaluating tracked target
-                if self.tracker_title == Trackers.MIXFORMERVIT:
+                if self.trackerType == Trackers.MIXFORMER:
                     psr = self.tracker.pred_score
                 elif self.ethTracker:
                     apce = APCE(self.tracker.score)
@@ -204,7 +224,7 @@ class PyTracker:
         if (psr/psr0) <= self.ratio_thresh:
             show_frame = cv2.line(show_frame, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), (0, 0, 255), 2)
             show_frame = cv2.line(show_frame, (int(x1+w), int(y1)), (int(x1), int(y1 + h)), (0, 0, 255), 2)
-        if self.tracker_title == Trackers.MIXFORMERVIT:
+        if self.trackerType == Trackers.MIXFORMER:
             for zone in self.tracker._sample_coords:
                 show_frame=cv2.rectangle(show_frame, (int(zone[1]), int(zone[0])), 
                                             (int(zone[3]), int(zone[2])), (0, 255, 255),1)
@@ -242,10 +262,10 @@ class PyTracker:
             score_map = cv2.addWeighted(crop_img, 0.6, score, 0.4, 0)
             current_frame[ymin:ymax, xmin:xmax] = score_map
         
-            if self.tracker_title == Trackers.DIMP50 or \
-                self.tracker_title == Trackers.KYS or \
-                self.tracker_title == Trackers.TOMP or \
-                self.tracker_title == Trackers.PRDIMP50:
+            if self.trackerType == Trackers.DIMP50 or \
+                self.trackerType == Trackers.KYS or \
+                self.trackerType == Trackers.TOMP or \
+                self.trackerType == Trackers.PRDIMP50:
                 for zone in self.tracker._sample_coords:
                     show_frame=cv2.rectangle(show_frame, (int(zone[1]), int(zone[0])), 
                                                 (int(zone[3]), int(zone[2])), (0, 255, 255),1)
