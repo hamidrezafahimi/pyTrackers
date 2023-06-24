@@ -7,6 +7,8 @@ from pytracker import PyTracker
 from lib.utils.io import get_img_list,get_states_data,get_ground_truthes_viot,write_results
 from lib.tracking.types import ExtType, Trackers
 
+# def cropList(lst, idx_i, idx_f):
+#     return lst[idx_i-1:idx_f]
 
 if __name__ == '__main__':
     config_dict = {}
@@ -19,7 +21,8 @@ if __name__ == '__main__':
     config_dict['ratio_tresh']['MIXFORMER_VIT'] = 0.995
     config_dict['interp_factor'] = {}
     config_dict['interp_factor']['MIXFORMER_VIT'] = 1.0
-    config_dict['ext_type'] = ExtType.viot
+    ext = ExtType.viot
+    config_dict['ext_type'] = ext
 
     # Extract ground-truth data
     gts = get_ground_truthes_viot(data_path)
@@ -27,10 +30,12 @@ if __name__ == '__main__':
     gts = gts[config_dict['start_frame'] - 1:config_dict['end_frame']]
     # # Convert gt data to int
     # viot_results_gts = [list(gt.astype(np.int)) for gt in gts]
-
     frame_list = get_img_list(data_path)
     frame_list.sort()
+    frame_list = frame_list[config_dict['start_frame']-1:config_dict['end_frame']]
     states = get_states_data(data_path) ## VIOT
+    states = states[config_dict['start_frame']-1:config_dict['end_frame']]
+
     tt = Trackers.MIXFORMER
     tcfg = {}
     tcfg['type'] = 'vit'
@@ -39,15 +44,10 @@ if __name__ == '__main__':
     tcfg['yaml_name'] = 'baseline'
     tcfg['dataset_name'] = 'got10k_test'
     tt.config = tcfg
-    tracker_mixformer = PyTracker(data_path, _gts=gts, tracker_title=tt,
-                                  dataset_config=config_dict, fl=frame_list, sts=states, 
-                                  ext_type=ExtType.viot)
-    
-    mixformer_preds, save_phrase = tracker_mixformer.tracking(data_name=data_name, verbose=True)
-    mixformer_results = {}
-    mixformer_results[data_name] = {}
-    mixformer_results[data_name]['tracker_mixformer_preds'] = []
-    for mixformer_pred in mixformer_preds:
-        mixformer_results[data_name]['tracker_mixformer_preds'].append(list(mixformer_pred.astype(np.int)))
-    write_results(save_phrase, mixformer_results)
-    print('mixformer done!')
+    tracker_mixformer = PyTracker(data_path, tracker_title=tt, dataset_config=config_dict,  
+                                  ext_type=ExtType.viot, verbose=True)
+
+    save_phrase = pth + "/results/{:s}_{:s}_".format(tt.name, data_name) + ext.name
+
+    tracker_mixformer.tracking(data_name=data_name, frame_list=frame_list, 
+                                                 init_gt=gts[0], states=states)

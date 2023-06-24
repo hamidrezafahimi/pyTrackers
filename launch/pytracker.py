@@ -5,7 +5,7 @@ import os
 from extensions.camera_kinematics import CameraKinematics
 from lib.utils.vision import APCE,PSR
 from lib.tracking.types import ExtType, Trackers
-
+import json
 import sys
 from pathlib import Path
 pth = str(Path(__file__).parent.resolve()) + "/../trackers"
@@ -14,69 +14,30 @@ current_module_pth = str(Path(__file__).parent.resolve()) + "/.."
 
 
 class PyTracker:
-    def __init__(self, img_dir, tracker_title, dataset_config, _gts, fl, sts, ext_type):
-        self.ext_type = ext_type
+    def __init__(self, img_dir, tracker_title, dataset_config, ext_type, verbose):
+        self.verbose = verbose
+        self.extType = ext_type
         self.img_dir = img_dir
         self.trackerType = tracker_title
-        self.trackFuncName = self.trackerType.group.name + "_" + self.ext_type.name + "_track"
+        self.trackFuncName = self.trackerType.group.name + "_" + self.extType.name + "_track"
         self.initFuncName = self.trackerType.group.name + "_init"
         self.trackerName = self.trackerType.name
-        self.frame_list = fl
-        self.gts = _gts
-        self.states = sts
+        # self.frame_list = fl
+        # self.gts = _gts
+        # self.states = sts
         self.fov = dataset_config['fov']
         self.ethTracker = False
         self.datasetCfg = dataset_config
 
-        start_frame = dataset_config['start_frame']
-        end_frame = dataset_config['end_frame']
-        self.init_gt = self.gts[0]
-        self.frame_list = self.frame_list[start_frame-1:end_frame]
-        self.states = self.states[start_frame-1:end_frame]
+        # start_frame = dataset_config['start_frame']
+        # end_frame = dataset_config['end_frame']
+        # self.init_gt = self.gts[0]
+        # self.frame_list = self.frame_list[start_frame-1:end_frame]
+        # self.states = self.states[start_frame-1:end_frame]
 
         self.ethTracker=True
         self.viot = dataset_config['ext_type'] == ExtType.viot
         self.extName = dataset_config['ext_type'].name
-
-    # def getETHTracker(self, name, params):
-    #     param_module = importlib.import_module('pytracking.parameter.{}.{}'.format(name, params))
-    #     params = param_module.parameters()
-    #     params.tracker_name = name
-    #     params.param_name = params
-
-    #     tracker_module_abspath = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tracker', name))
-    #     tracker_module = importlib.import_module('pytracking.tracker.{}'.format(name))
-    #     tracker_class = tracker_module.get_tracker_class()
-
-    #     tracker = tracker_class(params)
-
-    #     if hasattr(tracker, 'initialize_features'):
-    #         tracker.initialize_features()
-    #     return tracker
-
-    # def initETHTracker(self, frame, bbox):
-    #     x, y, w, h = bbox
-    #     init_state = [x, y, w, h]
-    #     box = {'init_bbox': init_state, 'init_object_ids': [1, ], 'object_ids': [1, ],
-    #                 'sequence_object_ids': [1, ]}
-    #     self.tracker.initialize(frame, box)
-
-    # def doTrack(self, current_frame, verbose, est_loc, do_learning, viot=False):
-    # 	if self.ethTracker:
-    #         if viot:
-    #             out = self.tracker.track(current_frame, FI=est_loc, do_learning=do_learning)
-    #         else:
-    #     	    out = self.tracker.track(current_frame)
-
-    #         bbox = [int(s) for s in out['target_bbox']]
-    # 	else:
-    # 	    if viot:
-    # 	        bbox=self.tracker.update(current_frame,vis=verbose,FI=est_loc, \
-    # 	                                 do_learning=do_learning) ## VIOT
-    # 	    else:
-    # 	    	bbox=self.tracker.update(current_frame,vis=verbose)
-    # 	    	# bbox=self.tracker.update(current_frame,vis=verbose,FI=est_loc)
-    # 	return bbox
 
     def mxf_viot_track(self, inp):
         return self.eth_viot_track(inp)
@@ -91,7 +52,7 @@ class PyTracker:
         return bbox
 
     def cf_viot_track(self, inp):
-        bbox=self.tracker.update(inp['current_frame'], vis=inp['verbose'], FI=inp['est_loc'], 
+        bbox=self.tracker.update(inp['current_frame'], vis=self.verbose, FI=inp['est_loc'], 
                                  do_learning=inp['do_learning']) ## VIOT
         return bbox
 
@@ -101,7 +62,7 @@ class PyTracker:
         return bbox
 
     def cf_raw_track(self, inp):
-        bbox=self.tracker.update(inp['current_frame'],vis=inp['verbose'])
+        bbox=self.tracker.update(inp['current_frame'],vis=self.verbose)
         return bbox
 
     def eth_init(self, frame, bbox):
@@ -144,84 +105,107 @@ class PyTracker:
     def cf_init(self):
         pass
 
-    def tracking(self, data_name, verbose=True):
-        save_phrase = current_module_pth + "/results/{:s}_{:s}_".format(self.trackerName, data_name) + self.extName
-        video_path = save_phrase + ".mp4"
-        poses = []
-        ratios = []
-        init_frame = cv2.imread(self.frame_list[0])
-        #print(init_frame.shape)
-        init_gt = np.array(self.init_gt)
-        x1, y1, w, h =init_gt
-        init_gt=tuple(init_gt)
+    def initLog(self, data_name, init_gt):
+        self.data_path = current_module_pth + "/results/{:s}_{:s}_".format(self.trackerType.name, 
+                                                                      data_name) + self.extType.name
+        video_path = self.data_path + ".mp4"
+        self.writer=None
+        if self.verbose is True:
+            self.writer = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30, 
+                                          (self.frameWidth, self.frameHeight))
+        ratios_path = self.data_path + ".txt"
+        if os.path.exists(ratios_path):
+            os.remove(ratios_path)
+        self.ratios_file = open(ratios_path, 'a')
+        self.poses = [np.array([int(init_gt[0]), int(init_gt[1]), int(init_gt[2]), int(init_gt[3])])]
+    
+    def endLog(self, data_name):
+        pose_results = {}
+        pose_results[data_name] = {}
+        pses = []
+        for pred in self.poses:
+            pses.append(list(pred.astype(np.int)))
+        pose_results[data_name]['tracker_{:s}_preds'.format(self.trackerType.tag)] = pses
+        f = open(self.data_path + ".json", 'w')
+        json_content = json.dumps(pose_results, default=str)
+        f.write(json_content)
+        f.close()
+        self.ratios_file.close()
+
+    def log(self, pose, ratio, frame):
+        np.savetxt(self.ratios_file, [ratio])
+        # json_content = json.dumps(pose, default=str)
+        # self.poses_file.write(json_content)
+        if self.writer is not None:
+            self.writer.write(frame)
+        self.poses.append(pose)
+
+    def tracking(self, data_name, frame_list, init_gt, states):
+        init_frame = cv2.imread(frame_list[0])
+        self.frameHeight, self.frameWidth = init_frame.shape[:2]
+        self.initLog(data_name, init_gt=init_gt)
         getattr(self, self.initFuncName)(init_frame, init_gt)
-        writer=None
-        if verbose is True and video_path is not None:
-            writer = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30, (init_frame.shape[1], init_frame.shape[0]))
-            ratios_path = os.path.splitext(video_path)[0] + ".txt"
         ## kinematic model for MAVIC Mini with horizontal field of view (hfov)
         ## equal to 66 deg.
         kin = CameraKinematics(self.interp_factor, init_frame.shape[1]/2, init_frame.shape[0]/2,\
                                 w=init_frame.shape[1], h=init_frame.shape[0],\
                                 hfov=self.fov, vis=False)
-        psr0=-1
-        psr=-1
-        est_loc=init_gt
-        stop=False
-        last_bbox=None
-        self.last_bbox=None
+        psr0 = -1
+        psr = -1
+        est_loc = tuple(init_gt)
+        stop = False
+        last_bbox = None
+        self.last_bbox = None
+        ratio = psr/psr0
 
-        for idx in range(len(self.frame_list)):
-            if idx != 0:
-                current_frame=cv2.imread(self.frame_list[idx])
-                height,width=current_frame.shape[:2]
+        for idx in range(1, len(frame_list)):
+            current_frame=cv2.imread(frame_list[idx])
 
-                if stop:
-                    bbox=last_bbox
-                else:
-                    args = {}
-                    args['current_frame'] = current_frame
-                    args['verbose'] = verbose
-                    args['est_loc'] = est_loc
-                    args['do_learning'] = psr/psr0>self.ratio_thresh and not stop
-                    args['viot'] = self.viot
-                    bbox = getattr(self, self.trackFuncName)(args)
-                    # bbox=self.doTrack(current_frame, verbose, est_loc, 
-                    #                   psr/psr0>self.ratio_thresh and not stop, viot=self.viot)
+            if stop:
+                bbox=last_bbox
+            else:
+                args = {}
+                args['current_frame'] = current_frame
+                args['est_loc'] = est_loc
+                args['do_learning'] = ratio>self.ratio_thresh
+                args['viot'] = self.viot
+                bbox = getattr(self, self.trackFuncName)(args)
 
-                stop=bbox[2] > width or bbox[3] > height
+            stop = bbox[2] > self.frameWidth or bbox[3] > self.frameHeight
 
-                ## evaluating tracked target
-                if self.trackerType == Trackers.MIXFORMER:
-                    psr = self.tracker.pred_score
-                elif self.ethTracker:
-                    apce = APCE(self.tracker.score)
-                    psr = apce
-                else:
-                    psr = PSR(self.tracker.score)
-                # F_max = np.max(self.tracker.score)
-                if psr0 is -1: psr0=psr
-                ratios.append(psr/psr0)
-                ## estimating target location using kinematc model
-                if psr/psr0 > self.ratio_thresh:
-                    last_bbox=bbox
-                    self.last_bbox = last_bbox
-                    est_loc = kin.updateRect3D(self.states[idx,:], self.states[0,1:4], current_frame, bbox)
-                else:
-                    est_loc = kin.updateRect3D(self.states[idx,:], self.states[0,1:4], current_frame, None)
+            ## evaluating tracked target
+            if self.trackerType == Trackers.MIXFORMER:
+                psr = self.tracker.pred_score
+            elif self.ethTracker:
+                apce = APCE(self.tracker.score)
+                psr = apce
+            else:
+                psr = PSR(self.tracker.score)
+            # F_max = np.max(self.tracker.score)
+            if psr0 is -1: psr0=psr
+            ratio = psr/psr0
+            ## estimating target location using kinematc model
+            if ratio > self.ratio_thresh:
+                last_bbox=bbox
+                self.last_bbox = last_bbox
+                est_loc = kin.updateRect3D(states[idx,:], states[0,1:4], current_frame, bbox)
+            else:
+                est_loc = kin.updateRect3D(states[idx,:], states[0,1:4], current_frame, None)
 
-                # print("psr ratio: ",psr/psr0, " learning: ", psr/psr0 > self.ratio_thresh, " est: ", est_loc)
-                x1,y1,w,h=bbox
-                if verbose is True:
-                    self.visualize(current_frame, x1, y1, w, h, psr, psr0, writer, width, height)
+            # print("psr ratio: ",ratio, " learning: ", ratio > self.ratio_thresh, " est: ", est_loc)
+            sh_frame = self.visualize(current_frame, bbox, ratio, est_loc)
+            self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), ratio, 
+                     sh_frame)
+        self.endLog(data_name)
+        print('processing {:s} with {:s} tracker done!'.format(data_name, self.trackerType.tag))
 
-            poses.append(np.array([int(x1), int(y1), int(w), int(h)]))
-        np.savetxt(ratios_path, np.array(ratios), delimiter=',')
-        return np.array(poses), save_phrase
 
-    def visualize(self, current_frame, x1, y1, w, h, psr, psr0, writer, width, height):
+    def visualize(self, current_frame, bbox, ratio, est_loc):
+        if self.verbose is False:
+            return None
+        x1,y1,w,h = bbox
         show_frame=cv2.rectangle(current_frame, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), (255, 0, 0),2)
-        if (psr/psr0) <= self.ratio_thresh:
+        if ratio <= self.ratio_thresh:
             show_frame = cv2.line(show_frame, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), (0, 0, 255), 2)
             show_frame = cv2.line(show_frame, (int(x1+w), int(y1)), (int(x1), int(y1 + h)), (0, 0, 255), 2)
         if self.trackerType == Trackers.MIXFORMER:
@@ -240,8 +224,8 @@ class PyTracker:
             score = cv2.applyColorMap(score, cv2.COLORMAP_JET)
             center = (int(x1+w/2-self.tracker.trans[1]),int(y1+h/2-self.tracker.trans[0]))
             x0,y0=center
-            x0=np.clip(x0,0,width-1)
-            y0=np.clip(y0,0,height-1)
+            x0=np.clip(x0,0,self.frameWidth-1)
+            y0=np.clip(y0,0,self.frameHeight-1)
             center=(x0,y0)
             xmin = int(center[0]) - size[0] // 2
             xmax = int(center[0]) + size[0] // 2 + size[0] % 2
@@ -249,13 +233,13 @@ class PyTracker:
             ymax = int(center[1]) + size[1] // 2 + size[1] % 2
             left = abs(xmin) if xmin < 0 else 0
             xmin = 0 if xmin < 0 else xmin
-            right = width - xmax
-            xmax = width if right < 0 else xmax
+            right = self.frameWidth - xmax
+            xmax = self.frameWidth if right < 0 else xmax
             right = size[0] + right if right < 0 else size[0]
             top = abs(ymin) if ymin < 0 else 0
             ymin = 0 if ymin < 0 else ymin
-            down = height - ymax
-            ymax = height if down < 0 else ymax
+            down = self.frameHeight - ymax
+            ymax = self.frameHeight if down < 0 else ymax
             down = size[1] + down if down < 0 else size[1]
             score = score[top:down, left:right]
             crop_img = current_frame[ymin:ymax, xmin:xmax]
@@ -284,7 +268,6 @@ class PyTracker:
 
             if not IN_COLAB:
                 cv2.imshow('demo', show_frame)
-
-        if writer is not None:
-            writer.write(show_frame)
         cv2.waitKey(1)
+        return show_frame
+       
