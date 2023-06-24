@@ -7,9 +7,6 @@ from pytracker import PyTracker
 from lib.utils.io import get_img_list,get_states_data,get_ground_truthes_viot,write_results
 from lib.tracking.types import ExtType, Trackers
 
-# def cropList(lst, idx_i, idx_f):
-#     return lst[idx_i-1:idx_f]
-
 if __name__ == '__main__':
     config_dict = {}
     data_name = 'pm1'
