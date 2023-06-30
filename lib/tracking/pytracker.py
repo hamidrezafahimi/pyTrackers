@@ -4,13 +4,12 @@ import importlib
 import os
 from extensions.camera_kinematics import CameraKinematics
 from lib.utils.vision import APCE,PSR
-from lib.tracking.types import ExtType, Trackers
+from .types import ExtType
 import json
 import sys
 from pathlib import Path
-pth = str(Path(__file__).parent.resolve()) + "/../trackers"
-sys.path.insert(0, pth)
-current_module_pth = str(Path(__file__).parent.resolve()) + "/.."
+root_path = str(Path(__file__).parent.resolve()) + "/../.."
+sys.path.insert(0, root_path + "/trackers")
 
 
 class PyTracker:
@@ -19,14 +18,9 @@ class PyTracker:
         self.extType = ext_type
         self.img_dir = img_dir
         self.trackerType = tracker_title
-        self.trackerName = self.trackerType.name
         self.fov = dataset_config['fov']
-        self.ethTracker = False
         self.datasetCfg = dataset_config
-        self.ethTracker=True
         self.viot = dataset_config['ext_type'] == ExtType.viot
-        self.extName = dataset_config['ext_type'].name
-        self.stop = False
         self.eval0 = None
         initFuncName = self.trackerType.group.name + "_init"
         self.init = getattr(self, initFuncName)
@@ -38,80 +32,37 @@ class PyTracker:
         self.process = getattr(self, processFuncName)
         visFuncName = self.trackerType.group.name + "_visualize"
         self.type_visualize = getattr(self, visFuncName)
+        self.ratio_thresh = self.datasetCfg['ratio_thresh']
+        self.interp_factor = self.datasetCfg['interp_factor']
 
     def mxf_viot_track(self, current_frame, est_loc, valid_track):
-        if self.stop:
-            return self.last_bbox
         return self.eth_viot_track(current_frame, est_loc, valid_track)
 
     def eth_viot_track(self, current_frame, est_loc, valid_track):
-        if self.stop:
-            return self.last_bbox
         out = self.tracker.track(current_frame, FI=est_loc, do_learning=valid_track)
-        bbox = [int(s) for s in out['target_bbox']]
-        return bbox
+        return [int(s) for s in out['target_bbox']]
 
     def cf_viot_track(self, current_frame, est_loc, valid_track):
-        if self.stop:
-            return self.last_bbox
-        bbox=self.tracker.update(current_frame, vis=self.verbose, FI=est_loc, 
-                                 do_learning=valid_track) ## VIOT
-        return bbox
+        return self.tracker.update(current_frame, vis=self.verbose, FI=est_loc, do_learning=valid_track)
 
     def mxf_raw_track(self, frame):
-        if self.stop:
-            return self.last_bbox
         return self.eth_raw_track(frame)
 
     def eth_raw_track(self, frame):
-        if self.stop:
-            return self.last_bbox
         out = self.tracker.track(frame)
-        bbox = [int(s) for s in out['target_bbox']]
-        return bbox
+        return [int(s) for s in out['target_bbox']]
 
     def cf_raw_track(self, frame):
-        if self.stop:
-            return self.last_bbox
         return self.tracker.update(frame, vis=self.verbose)
     
-    def cf_eval(self, bbox):
-        self.checkFailure(bbox)
-        psr = PSR(self.tracker.score)
-        if self.eval0 is None: 
-            self.eval0 = psr
-        ratio = psr / self.eval0
-        valid = ratio > self.ratio_thresh
-        if valid and not self.stop:
-            self.last_bbox = bbox
-        return valid, [psr, ratio]
+    def cf_eval(self):
+        return PSR(self.tracker.score)
 
-    def eth_eval(self, bbox):
-        self.checkFailure(bbox)
-        apce = APCE(self.tracker.score)
-        if self.eval0 is None: 
-            self.eval0 = apce
-        ratio = apce / self.eval0
-        valid = ratio > self.ratio_thresh
-        if valid and not self.stop:
-            self.last_bbox = bbox
-        return valid, [apce, ratio]
+    def eth_eval(self):
+        return APCE(self.tracker.score)
 
-    def mxf_eval(self, bbox):
-        self.checkFailure(bbox)
-        psr = self.tracker.pred_score
-        if self.eval0 is None: 
-            self.eval0 = psr
-        ratio = psr/self.eval0
-        valid = ratio > self.ratio_thresh
-        if valid and not self.stop:
-            self.last_bbox = bbox
-        return valid, [psr, ratio]
-
-    def checkFailure(self, bbox):
-        if self.stop:
-            bbox = self.last_bbox
-        self.stop = bbox[2] > self.frameWidth or bbox[3] > self.frameHeight
+    def mxf_eval(self):
+        return self.tracker.pred_score
 
     def eth_init(self, frame, bbox):
         param_module = importlib.import_module('pytracking.parameter.{}.{}'
@@ -141,8 +92,7 @@ class PyTracker:
         params = param_module.parameters(self.trackerType.config['yaml_name'], self.trackerType.config['model'], 
                             self.trackerType.config['search_area_scale'])
         self.tracker = tracker_module.MixFormerOnline(params, self.trackerType.config['dataset_name'])
-        self.ratio_thresh = self.datasetCfg['ratio_tresh']['MIXFORMER_VIT']
-        self.interp_factor = self.datasetCfg['interp_factor']['MIXFORMER_VIT']
+        
         x, y, w, h = bbox
         init_state = [x, y, w, h]
         box = {'init_bbox': init_state, 'init_object_ids': [1, ], 'object_ids': [1, ],
@@ -153,7 +103,7 @@ class PyTracker:
         pass
 
     def initLog(self, data_name, init_gt):
-        self.data_path = current_module_pth + "/results/{:s}_{:s}_".format(self.trackerType.name, 
+        self.data_path = root_path + "/results/{:s}_{:s}_".format(self.trackerType.name, 
                                                                       data_name) + self.extType.name
         video_path = self.data_path + ".mp4"
         self.writer=None
@@ -185,24 +135,36 @@ class PyTracker:
             self.writer.write(frame)
         self.poses.append(pose)
 
+    def postProc(self, bbox):
+        keeps_on = not (bbox[2] > self.frameWidth or bbox[3] > self.frameHeight)
+        if not keeps_on:
+            bbox = None
+        ## evaluating tracked target
+        score = self.eval()
+        if self.eval0 is None: 
+            self.eval0 = score
+        ratio = score/self.eval0
+        valid = ratio > self.ratio_thresh
+        return valid, keeps_on, [score, ratio]
+
     def process_viot(self, frame_list, states, init_gt):
         ## kinematic model for MAVIC Mini with horizontal field of view (hfov)
         ## equal to 66 deg.
         kin = CameraKinematics(self.interp_factor, self.frameWidth/2, self.frameHeight/2,\
                                 w=self.frameWidth, h=self.frameHeight, hfov=self.fov, vis=False)
         est_loc = tuple(init_gt)
-        valid_track = True
+        valid = True
+        keeps = True
         for idx in range(1, len(frame_list)):
             current_frame=cv2.imread(frame_list[idx])
-            bbox = self.track(current_frame, est_loc, valid_track)
-            ## evaluating tracked target
-            valid_track, log_nums = self.eval(bbox)
+            bbox = self.track(current_frame, est_loc, valid and keeps)
+            valid, keeps, log_nums = self.postProc(bbox)
             ## estimating target location using kinematc model
-            if valid_track:
+            if valid:
                 est_loc = kin.updateRect3D(states[idx,:], states[0,1:4], current_frame, bbox)
             else:
                 est_loc = kin.updateRect3D(states[idx,:], states[0,1:4], current_frame, None)
-            sh_frame = self.visualize(current_frame, bbox, valid_track)
+            sh_frame = self.visualize(current_frame, bbox, valid)
             ## Calling the following function leads to drawing a point being updated - only - based
             ## on motion model when the target is occluded
             self.viot_vis(sh_frame, est_loc)
@@ -213,7 +175,7 @@ class PyTracker:
         for idx in range(1, len(frame_list)):
             current_frame=cv2.imread(frame_list[idx])
             bbox = self.track(current_frame)
-            _, log_nums = self.eval(bbox)
+            _, _, log_nums = self.postProc(bbox)
             sh_frame = self.visualize(current_frame, bbox)
             self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), 
                      sh_frame, log_nums)
@@ -284,58 +246,8 @@ class PyTracker:
         if not valid:
             show_frame = cv2.line(show_frame, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), (0, 0, 255), 2)
             show_frame = cv2.line(show_frame, (int(x1+w), int(y1)), (int(x1), int(y1 + h)), (0, 0, 255), 2)
-        # self.type_visualize(show_frame=show_frame, current_frame=current_frame, bbox=bbox)
-        if self.trackerType == Trackers.MIXFORMER:
-            for zone in self.tracker._sample_coords:
-                show_frame=cv2.rectangle(show_frame, (int(zone[1]), int(zone[0])), 
-                                            (int(zone[3]), int(zone[2])), (0, 255, 255),1)
-        else:
-            if len(current_frame.shape)==2:
-                current_frame=cv2.cvtColor(current_frame,cv2.COLOR_GRAY2BGR)
-            score = self.tracker.score
-            size=self.tracker.crop_size
-            score = cv2.resize(score, size)
-            score -= score.min()
-            score =score/ score.max()
-            score = (score * 255).astype(np.uint8)
-            score = cv2.applyColorMap(score, cv2.COLORMAP_JET)
-            center = (int(x1+w/2-self.tracker.trans[1]),int(y1+h/2-self.tracker.trans[0]))
-            x0,y0=center
-            x0=np.clip(x0,0,self.frameWidth-1)
-            y0=np.clip(y0,0,self.frameHeight-1)
-            center=(x0,y0)
-            xmin = int(center[0]) - size[0] // 2
-            xmax = int(center[0]) + size[0] // 2 + size[0] % 2
-            ymin = int(center[1]) - size[1] // 2
-            ymax = int(center[1]) + size[1] // 2 + size[1] % 2
-            left = abs(xmin) if xmin < 0 else 0
-            xmin = 0 if xmin < 0 else xmin
-            right = self.frameWidth - xmax
-            xmax = self.frameWidth if right < 0 else xmax
-            right = size[0] + right if right < 0 else size[0]
-            top = abs(ymin) if ymin < 0 else 0
-            ymin = 0 if ymin < 0 else ymin
-            down = self.frameHeight - ymax
-            ymax = self.frameHeight if down < 0 else ymax
-            down = size[1] + down if down < 0 else size[1]
-            score = score[top:down, left:right]
-            crop_img = current_frame[ymin:ymax, xmin:xmax]
-            score_map = cv2.addWeighted(crop_img, 0.6, score, 0.4, 0)
-            current_frame[ymin:ymax, xmin:xmax] = score_map
-        
-            if self.trackerType == Trackers.DIMP50 or \
-                self.trackerType == Trackers.KYS or \
-                self.trackerType == Trackers.TOMP or \
-                self.trackerType == Trackers.PRDIMP50:
-                for zone in self.tracker._sample_coords:
-                    show_frame=cv2.rectangle(show_frame, (int(zone[1]), int(zone[0])), 
-                                                (int(zone[3]), int(zone[2])), (0, 255, 255),1)
-
-            # if self.viot:
-                
-
-            # if not IN_COLAB:
-            #     cv2.imshow('demo', show_frame)
+        self.type_visualize(show_frame=show_frame, current_frame=current_frame, bbox=bbox)
+        cv2.imshow('demo', show_frame)
         cv2.waitKey(1)
         return show_frame
        

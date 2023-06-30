@@ -1,12 +1,18 @@
 from enum import Enum
 
+class Datasets(Enum):
+    CUSTOM = 0
+    VIOT = 1
+    # ...
+
+
 class ExtType(Enum):
     raw = 0
     viot = 1
 
 
 class Trackers(Enum):
-    KCFHOG = 1
+    KCF = 1
     LDES = 2
     STRCF = 3
     CSRDCF = 4

@@ -1,0 +1,8 @@
+vit:
+  type: vit
+  model: mixformer_vit_base_online.pth.tar
+  search_area_scale: 4.0
+  yaml_name: baseline
+  dataset_name: got10k_test
+  default_viot_ratio_thresh: 0.995
+  default_viot_interp_factor: 1
