@@ -151,7 +151,8 @@ class PyTracker:
         ## kinematic model for MAVIC Mini with horizontal field of view (hfov)
         ## equal to 66 deg.
         kin = CameraKinematics(self.interp_factor, self.frameWidth/2, self.frameHeight/2,\
-                                w=self.frameWidth, h=self.frameHeight, hfov=self.fov, vis=False)
+                                w=self.frameWidth, h=self.frameHeight, hfov=self.fov, vis=False, 
+                                ref=states[0,1:4])
         est_loc = tuple(init_gt)
         valid = True
         keeps = True
@@ -161,9 +162,9 @@ class PyTracker:
             valid, keeps, log_nums = self.postProc(bbox)
             ## estimating target location using kinematc model
             if valid:
-                est_loc = kin.updateRect3D(states[idx,:], states[0,1:4], current_frame, bbox)
+                est_loc = kin.updateRect3D(states[idx,:], current_frame, bbox)
             else:
-                est_loc = kin.updateRect3D(states[idx,:], states[0,1:4], current_frame, None)
+                est_loc = kin.updateRect3D(states[idx,:], current_frame, None)
             sh_frame = self.visualize(current_frame, bbox, valid)
             ## Calling the following function leads to drawing a point being updated - only - based
             ## on motion model when the target is occluded
@@ -175,8 +176,8 @@ class PyTracker:
         for idx in range(1, len(frame_list)):
             current_frame=cv2.imread(frame_list[idx])
             bbox = self.track(current_frame)
-            _, _, log_nums = self.postProc(bbox)
-            sh_frame = self.visualize(current_frame, bbox)
+            valid, _, log_nums = self.postProc(bbox)
+            sh_frame = self.visualize(current_frame, bbox, valid)
             self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), 
                      sh_frame, log_nums)
 
@@ -191,7 +192,7 @@ class PyTracker:
 
     def mxf_visualize(self, show_frame=None, current_frame=None, bbox=None):
         for zone in self.tracker._sample_coords:
-            show_frame=cv2.rectangle(show_frame, (int(zone[1]), int(zone[0])), 
+            show_frame=cv2.rectangle(show_frame, (int(zone[1]), int(zone[0])),
                                         (int(zone[3]), int(zone[2])), (0, 255, 255),1)
 
     def eth_visualize(self, show_frame=None, current_frame=None, bbox=None):
@@ -250,4 +251,3 @@ class PyTracker:
         cv2.imshow('demo', show_frame)
         cv2.waitKey(1)
         return show_frame
-       

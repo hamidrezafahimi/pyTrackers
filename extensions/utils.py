@@ -34,3 +34,54 @@ def make_DCM(eul):
     DCM[2,2] = np.cos(theta)*np.cos(phi)
 
     return DCM
+
+def toSpherecalCoords(vec):
+
+    if vec is None:
+        return None
+
+    x = vec[0]
+    y = vec[1]
+    z = vec[2]
+
+    r = np.sqrt(x**2 + y**2 + z**2)
+    th = np.arccos( z / r )
+
+    if x>0:
+        phi = np.arctan(y/x)
+    elif x<0 and y>=0:
+        phi = np.arctan(y/x) + np.pi
+    elif x<0 and y<0:
+        phi = np.arctan(y/x) - np.pi
+    elif x==0 and y>0:
+        phi = np.pi
+    elif x==0 and y<0:
+        phi = -np.pi
+
+    return np.array([r,th, phi])
+
+def toCartesianCoords(vec):
+
+    if vec is None:
+        return None
+
+    r = vec[0]
+    th = vec[1]
+    phi = vec[2]
+
+    x = r*np.cos(phi)*np.sin(th)
+    y = r*np.sin(phi)*np.sin(th)
+    z = r*np.cos(th)
+
+    return np.array([x, y, z])
+
+def angleDifference(ang1, ang2):
+    PI  = np.pi
+
+    a = ang1 - ang2
+    if a > PI:
+        a -= 2*PI
+    if a < -PI:
+        a += 2*PI
+
+    return a
