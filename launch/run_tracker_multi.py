@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 pth = str(Path(__file__).parent.resolve()) + "/.."
 sys.path.insert(0, pth)
-from lib.utils.io import get_gt, get_tracker_config, get_run_config
+from lib.utils.io import get_gt, get_tracker_config, get_run_config, write_gt
 from lib.tracking.types import ExtType, Trackers, Datasets
 from lib.tracking.pytracker import PyTracker
 
@@ -46,11 +46,11 @@ if __name__ == '__main__':
     for tr_list in tr_lists:
         for d_name in data_names:
             data_path = pth + "/dataset/VIOT/" + d_name
-            
             config_dict = get_run_config(data_name=d_name, ds_type=dataset_type, ext_type=ext_type,
                                          tr=tr_list, start_frame=data_names[d_name][0],
                                          end_frame=data_names[d_name][1])
-            frame_list, states, init_gt = get_gt(data_path, config_dict)
+            frame_list, states, init_gt, gts = get_gt(data_path, config_dict)
+            write_gt(gts, d_name)
             tt = get_tracker_config(tr_list[0], tr_list[1])
             tracker = PyTracker(data_path, tracker_title=tt, dataset_config=config_dict, 
                                 ext_type=ext_type, verbose=True)

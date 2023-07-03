@@ -1,4 +1,46 @@
 import matplotlib.pyplot as plt
+import numpy as np
+
+def get_thresh_precision_pair(gts,preds):
+    length=min(len(gts),len(preds))
+    gts=gts[:length,:]
+    preds=preds[:length,:]
+    gt_centers_x = (gts[:, 0]+gts[:,2]/2)
+    gt_centers_y = (gts[:, 1]+gts[:,3]/2)
+    preds_centers_x = (preds[:, 0]+preds[:,2]/2)
+    preds_centers_y = (preds[:, 1]+preds[:,3]/2)
+    dists = np.sqrt((gt_centers_x - preds_centers_x) ** 2 + (gt_centers_y - preds_centers_y) ** 2)
+    threshes = []
+    precisions = []
+    for thresh in np.linspace(0, 50, 101):
+        true_len = len(np.where(dists < thresh)[0])
+        precision = true_len / len(dists)
+        threshes.append(thresh)
+        precisions.append(precision)
+    return threshes,precisions
+
+def get_thresh_success_pair(gts, preds):
+    length=min(len(gts),len(preds))
+    gts=gts[:length,:]
+    preds=preds[:length,:]
+    intersect_tl_x = np.max((gts[:, 0], preds[:, 0]), axis=0)
+    intersect_tl_y = np.max((gts[:, 1], preds[:, 1]), axis=0)
+    intersect_br_x = np.min((gts[:, 0] + gts[:, 2], preds[:, 0] + preds[:, 2]), axis=0)
+    intersect_br_y = np.min((gts[:, 1] + gts[:, 3], preds[:, 1] + preds[:, 3]), axis=0)
+    intersect_w = intersect_br_x - intersect_tl_x
+    intersect_w[intersect_w < 0] = 0
+    intersect_h = intersect_br_y - intersect_tl_y
+    intersect_h[intersect_h < 0] = 0
+    intersect_areas = intersect_h * intersect_w
+    ious = intersect_areas / (gts[:, 2] * gts[:, 3] + preds[:, 2] * preds[:, 3] - intersect_areas)
+    threshes = []
+    successes = []
+    for thresh in np.linspace(0, 1, 101):
+        success_len = len(np.where(ious > thresh)[0])
+        success = success_len / len(ious)
+        threshes.append(thresh)
+        successes.append(success)
+    return threshes,successes
 
 def plot_precision(gts,preds,save_path):
     plt.figure(2)

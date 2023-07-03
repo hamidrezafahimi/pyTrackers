@@ -12,6 +12,7 @@ results/
 !results/README.md
 *.pth
 *.tar
+*.pdf
 # /eval/test
 # .eval/log_test.txt
 # .eval/log_test_vot2016.txt

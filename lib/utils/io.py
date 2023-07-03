@@ -8,6 +8,18 @@ import yaml
 root_path = str(Path(__file__).parent.resolve()) + "/../.."
 config_path = root_path + "/config"
 
+def write_gt(gts, d_name):
+    gt_dict = {}
+    gt_dict[d_name] = {}
+    pses = []
+    for gt in gts:
+        pses.append(list(gt.astype(np.int)))
+    gt_dict[d_name]["gts"] = pses
+    f = open(root_path + "/results/gts_"+d_name+".json", 'w')
+    json_content = json.dumps(gt_dict, default=str)
+    f.write(json_content)
+    f.close()
+
 def get_run_config(data_name, ds_type, ext_type, tr, start_frame, end_frame):
     config_dict = {}
     # data_name = Path(path).stem
@@ -37,7 +49,8 @@ def get_gt(data_path, config_dict):
     states = get_states_data(data_path)
     return frame_list[config_dict['start_frame']-1:config_dict['end_frame']], \
            states[config_dict['start_frame']-1:config_dict['end_frame']], \
-           gts[config_dict['start_frame'] - 1]  
+           gts[config_dict['start_frame'] - 1] , \
+           gts[config_dict['start_frame']-1:config_dict['end_frame']]
 
 def get_tracker_config(ttype, variant):
     tobj = ttype
