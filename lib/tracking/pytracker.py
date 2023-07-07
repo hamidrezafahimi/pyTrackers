@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import importlib
 import os
+from extensions.viotrack import VIOTrack
 from extensions.camera_kinematics import CameraKinematics
 from lib.utils.vision import APCE,PSR
 from .types import ExtType
@@ -156,9 +157,8 @@ class PyTracker:
         return valid, keeps_on, [score, ratio]
 
     def process_viot(self, frame_list, states, init_gt):
-        kin = CameraKinematics(self.interp_factor, self.frameWidth/2, self.frameHeight/2,\
-                                w=self.frameWidth, h=self.frameHeight, hfov=self.fov, vis=False, 
-                                ref=states[0,1:4])
+        kin = VIOTrack(self.interp_factor, self.frameWidth/2, self.frameHeight/2, w=self.frameWidth,
+                       h=self.frameHeight, hfov=self.fov, vis=False, ref=states[0,1:4])
         est_loc = tuple(init_gt)
         valid = True
         keeps = True
@@ -166,7 +166,7 @@ class PyTracker:
             current_frame=cv2.imread(frame_list[idx])
             bbox = self.track(current_frame, est_loc, valid and keeps)
             valid, keeps, log_nums = self.postProc(bbox)
-            ## estimating target location using kinematc model
+            ## estimating next target location using kinematc model
             if valid:
                 est_loc, p = kin.updateRect3D(states[idx,:], current_frame, bbox)
             else:
@@ -178,16 +178,19 @@ class PyTracker:
             self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), sh_frame,
                      log_nums, [idx, *p])
 
-    def process_raw(self, frame_list, a=None, b=None):
+    def process_raw(self, frame_list, states, b=None):
+        kin = CameraKinematics(cx=self.frameWidth/2, cy=self.frameHeight/2, w=self.frameWidth,
+                               h=self.frameHeight, hfov=self.fov, ref=states[0,1:4])
         for idx in range(1, len(frame_list)):
             current_frame=cv2.imread(frame_list[idx])
             bbox = self.track(current_frame)
             valid, _, log_nums = self.postProc(bbox)
             sh_frame = self.visualize(current_frame, bbox, valid)
-            self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), sh_frame,
-                     log_nums)
+            self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), 
+                     sh_frame, log_nums, 
+                     [idx, *kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])[0]])
 
-    def tracking(self, data_name, frame_list, init_gt, states=None):
+    def tracking(self, data_name, frame_list, init_gt, states):
         init_frame = cv2.imread(frame_list[0])
         self.frameHeight, self.frameWidth = init_frame.shape[:2]
         self.initLog(data_name, init_gt=init_gt)

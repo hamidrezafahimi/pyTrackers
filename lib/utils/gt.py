@@ -1,6 +1,7 @@
 import numpy as np
 from .geom import all_to_utm, latLon_to_utm, utm_to_ned
 
+
 class FlatGroundTargetLocator:
     def __init__(self, t_data_path, r_loc):
         t_data = np.loadtxt(t_data_path, delimiter=',')
@@ -22,3 +23,10 @@ class FlatGroundTargetLocator:
         out_x = np.interp(t, self.target_data_utm[:,0], self.target_data_utm[:,1])
         out_y = np.interp(t, self.target_data_utm[:,0], self.target_data_utm[:,2])
         return [out_x, out_y]
+
+def calc_pose_error(gt_poses, poses):
+    errors = []
+    for k in range(1, gt_poses.shape[0]):
+        errors.append([k, abs(np.sqrt((gt_poses[k,1]-poses[k-1,1])**2 + 
+                                  (gt_poses[k,2]-poses[k-1,2])**2))])
+    return np.array(errors)

@@ -41,7 +41,7 @@ class Trackers(Enum):
             return self.__a
         else:
             raise Exception('Request for `config` attribute of tracker {:s} while no config is set\
-           by user'.format(self.name))
+            by user'.format(self.name))
     
     @config.setter
     def config(self, val):
@@ -54,7 +54,7 @@ class Trackers(Enum):
     @a.setter
     def a(self, var):
         self.__a = var
-    
+
 
 class TrackerType(Enum):
     opencv = 1
