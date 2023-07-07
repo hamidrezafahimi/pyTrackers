@@ -7,7 +7,7 @@ from lib.tracking.types import ExtType, Trackers, Datasets
 from lib.tracking.pytracker import PyTracker
 
 dataset_type = Datasets.VIOT
-ext_type = ExtType.raw
+ext_type = ExtType.viot
 data_name = "park_mavic_1"
 start_frame = 110
 end_frame = 191
@@ -21,7 +21,7 @@ if __name__ == '__main__':
                                  tr=[tracker_type, tracker_variant], start_frame=start_frame,
                                  end_frame=end_frame)
     frame_list, states, init_gt, gts = get_gt(data_path, config_dict)
-    write_gt(gts, data_name)
+    write_gt(gts, states, data_path)
     tracker = PyTracker(data_path, tracker_title=tt, dataset_config=config_dict, 
                         ext_type=ext_type, verbose=True)
     tracker.tracking(data_name=data_name, frame_list=frame_list, init_gt=init_gt, 

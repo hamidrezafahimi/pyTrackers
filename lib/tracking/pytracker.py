@@ -13,7 +13,7 @@ sys.path.insert(0, root_path + "/trackers")
 
 
 class PyTracker:
-    def __init__(self, img_dir, tracker_title, dataset_config, ext_type, verbose):
+    def __init__(self, img_dir, tracker_title, dataset_config, ext_type, verbose, plot_path=False):
         self.verbose = verbose
         self.extType = ext_type
         self.img_dir = img_dir
@@ -34,6 +34,7 @@ class PyTracker:
         self.type_visualize = getattr(self, visFuncName)
         self.ratio_thresh = self.datasetCfg['ratio_thresh']
         self.interp_factor = self.datasetCfg['interp_factor']
+        self.pPath = plot_path
 
     def mxf_viot_track(self, current_frame, est_loc, valid_track):
         return self.eth_viot_track(current_frame, est_loc, valid_track)
@@ -104,23 +105,27 @@ class PyTracker:
 
     def initLog(self, data_name, init_gt):
         self.data_path = root_path + "/results/{:s}_{:s}_".format(self.trackerType.name, 
-                                                                      data_name) + self.extType.name
+                                                                    data_name) + self.extType.name
         video_path = self.data_path + ".mp4"
         self.writer=None
         if self.verbose is True:
             self.writer = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30, 
                                           (self.frameWidth, self.frameHeight))
-        ratios_path = self.data_path + ".txt"
+        ratios_path = self.data_path + "_ratios.txt"
         if os.path.exists(ratios_path):
             os.remove(ratios_path)
+        pose3ds_path = self.data_path + "_pose3ds.txt"
+        if os.path.exists(pose3ds_path):
+            os.remove(pose3ds_path)
         self.ratios_file = open(ratios_path, 'a')
-        self.poses = [np.array([int(init_gt[0]), int(init_gt[1]), int(init_gt[2]), int(init_gt[3])])]
+        self.pose3ds_file = open(pose3ds_path, 'a')
+        self.tracker_bboxes = [np.array([int(init_gt[0]), int(init_gt[1]), int(init_gt[2]), int(init_gt[3])])]
     
     def endLog(self, data_name):
         pose_results = {}
         pose_results[data_name] = {}
         pses = []
-        for pred in self.poses:
+        for pred in self.tracker_bboxes:
             pses.append(list(pred.astype(np.int)))
         pose_results[data_name]['tracker_{:s}_preds'.format(self.trackerType.tag)] = pses
         f = open(self.data_path + ".json", 'w')
@@ -128,12 +133,15 @@ class PyTracker:
         f.write(json_content)
         f.close()
         self.ratios_file.close()
+        self.pose3ds_file.close()
 
-    def log(self, pose, frame, log_nums):
+    def log(self, pose, frame, log_nums, pose3d=None):
         np.savetxt(self.ratios_file, np.array(log_nums).reshape(1, -1), delimiter=", ")
+        if not pose3d is None:
+            np.savetxt(self.pose3ds_file, np.array(pose3d).reshape(1, -1), delimiter=", ")
         if self.writer is not None:
             self.writer.write(frame)
-        self.poses.append(pose)
+        self.tracker_bboxes.append(pose)
 
     def postProc(self, bbox):
         keeps_on = not (bbox[2] > self.frameWidth or bbox[3] > self.frameHeight)
@@ -148,8 +156,6 @@ class PyTracker:
         return valid, keeps_on, [score, ratio]
 
     def process_viot(self, frame_list, states, init_gt):
-        ## kinematic model for MAVIC Mini with horizontal field of view (hfov)
-        ## equal to 66 deg.
         kin = CameraKinematics(self.interp_factor, self.frameWidth/2, self.frameHeight/2,\
                                 w=self.frameWidth, h=self.frameHeight, hfov=self.fov, vis=False, 
                                 ref=states[0,1:4])
@@ -162,15 +168,15 @@ class PyTracker:
             valid, keeps, log_nums = self.postProc(bbox)
             ## estimating target location using kinematc model
             if valid:
-                est_loc = kin.updateRect3D(states[idx,:], current_frame, bbox)
+                est_loc, p = kin.updateRect3D(states[idx,:], current_frame, bbox)
             else:
-                est_loc = kin.updateRect3D(states[idx,:], current_frame, None)
+                est_loc, p = kin.updateRect3D(states[idx,:], current_frame, None)
             sh_frame = self.visualize(current_frame, bbox, valid)
             ## Calling the following function leads to drawing a point being updated - only - based
             ## on motion model when the target is occluded
             self.viot_vis(sh_frame, est_loc)
-            self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), 
-                     sh_frame, log_nums)
+            self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), sh_frame,
+                     log_nums, [idx, *p])
 
     def process_raw(self, frame_list, a=None, b=None):
         for idx in range(1, len(frame_list)):
@@ -178,8 +184,8 @@ class PyTracker:
             bbox = self.track(current_frame)
             valid, _, log_nums = self.postProc(bbox)
             sh_frame = self.visualize(current_frame, bbox, valid)
-            self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), 
-                     sh_frame, log_nums)
+            self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), sh_frame,
+                     log_nums)
 
     def tracking(self, data_name, frame_list, init_gt, states=None):
         init_frame = cv2.imread(frame_list[0])

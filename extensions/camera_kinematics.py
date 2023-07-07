@@ -6,7 +6,11 @@ import cv2 as cv
 from scipy.spatial.transform import Rotation as R
 from lib.utils.plotting import plot_kinematics
 import matplotlib.pyplot as plt
-from .utils import gps_to_ned, make_DCM, toSpherecalCoords, toCartesianCoords, angleDifference
+import sys
+from pathlib import Path
+root_path = str(Path(__file__).parent.resolve()) + "/../.."
+sys.path.insert(0, root_path)
+from lib.utils import gps_to_ned, make_DCM, toSpherecalCoords, toCartesianCoords, angleDifference
 
 class CameraKinematics:
 
@@ -265,7 +269,7 @@ class CameraKinematics:
             self._pos_est = self._pos_buff[-1][1:4] + self._interp_factor*v*dt
 
         if self._pos_est is None:
-            return self._last_rect
+            return self._last_rect, [np.inf, np.inf, np.inf]
 
         ## based on the estimated position for the target (if there is any), reproject and get an
         ## estimated center for search area within image
@@ -292,7 +296,7 @@ class CameraKinematics:
                     self._last_rect[2], self._last_rect[3])
         # image = cv.putText(image, '{:d}, {:d}, {:d}'.format(center_est[0], center_est[1],
         # len(vs)), (50, 50), cv.FONT_HERSHEY_SIMPLEX, 1, (0,255,255), 2, cv.LINE_AA)
-        return rect_est
+        return rect_est, self._pos_est
 
 
     def updateRectSphere(self, imu_meas, rect=None):
