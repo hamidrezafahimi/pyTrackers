@@ -1,3 +1,6 @@
 [submodule "trackers/pytracking"]
 	path = trackers/pytracking
 	url = https://github.com/hamidrezafahimi/pytracking.git
+[submodule "trackers/MixFormer"]
+	path = trackers/MixFormer
+	url = https://github.com/hamidrezafahimi/MixFormer.git
