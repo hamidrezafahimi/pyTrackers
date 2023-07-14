@@ -12,7 +12,7 @@ class FlatGroundTargetLocator:
         target_ned_poses = []
         for k in range(camera_data.shape[0]):
             target_ned_poses.append([camera_data[k,0],
-                                     *self.calc_target_ned_pose(camera_data[k,0])])
+                                     *self.calc_target_ned_pose(camera_data[k,0]), k])
         return np.array(target_ned_poses)
 
     def calc_target_ned_pose(self, t):

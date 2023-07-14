@@ -10,15 +10,17 @@ from .geom import all_to_ned
 root_path = str(Path(__file__).parent.resolve()) + "/../.."
 config_path = root_path + "/config"
 
-def write_gt(gts, sts, d_path):#, write_target_gt=True):
-    d_name = Path(d_path).stem
-    # if write_target_gt:
+def write_target_poses_ned(d_path, d_name, sts):
     target_gt_path = d_path + "/target_poses.txt"
     fgtl = FlatGroundTargetLocator(target_gt_path, sts[0,1:4])
     target_poses_ned = fgtl.calc_target_ned_poses(sts)
     tpf = open(root_path + "/results/"+d_name+"_target_poses.txt", 'w')
     np.savetxt(tpf, target_poses_ned, delimiter=", ")
     tpf.close()
+
+def write_gt(gts, sts, d_path):#, write_target_gt=True):
+    d_name = Path(d_path).stem
+    write_target_poses_ned(d_path, d_name, sts)
     csf = open(root_path + "/results/"+d_name+"_cam_poses.txt", 'w')
     camera_poses_ned = all_to_ned(sts)
     np.savetxt(csf, camera_poses_ned, delimiter=", ")
@@ -56,15 +58,13 @@ def get_run_config(data_name, ds_type, ext_type, tr, start_frame, end_frame):
     config_dict['ext_type'] = ext_type
     return config_dict
 
-def get_gt(data_path, config_dict):
+def get_gt(data_path, start_frame, end_frame):
     gts = get_ground_truthes_viot(data_path)
     frame_list = get_img_list(data_path)
     frame_list.sort()
     states = get_states_data(data_path)
-    return frame_list[config_dict['start_frame']-1:config_dict['end_frame']], \
-           states[config_dict['start_frame']-1:config_dict['end_frame']], \
-           gts[config_dict['start_frame'] - 1] , \
-           gts[config_dict['start_frame']-1:config_dict['end_frame']]
+    return frame_list[start_frame-1:end_frame], states[start_frame-1:end_frame], \
+           gts[start_frame - 1] , gts[start_frame-1:end_frame]
 
 def get_tracker_config(ttype, variant):
     tobj = ttype

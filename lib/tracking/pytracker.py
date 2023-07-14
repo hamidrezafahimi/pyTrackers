@@ -2,8 +2,9 @@ import cv2
 import numpy as np
 import importlib
 import os
-from extensions.viotrack import VIOTrack
+from extensions.viot import VIOT
 from extensions.camera_kinematics import CameraKinematics
+from extensions.path_tracker import EKFEstimator
 from lib.utils.vision import APCE,PSR
 from .types import ExtType
 import json
@@ -27,7 +28,10 @@ class PyTracker:
         self.init = getattr(self, initFuncName)
         evalFuncName = self.trackerType.group.name + "_eval"
         self.eval = getattr(self, evalFuncName)
-        trackFuncName = self.trackerType.group.name + "_" + self.extType.name + "_track"
+        if ext_type == ExtType.raw:
+            trackFuncName = self.trackerType.group.name + "_raw_track"
+        else:
+            trackFuncName = self.trackerType.group.name + "_ext_track"
         self.track = getattr(self, trackFuncName)
         processFuncName = "process_" + self.extType.name
         self.process = getattr(self, processFuncName)
@@ -37,14 +41,14 @@ class PyTracker:
         self.interp_factor = self.datasetCfg['interp_factor']
         self.pPath = plot_path
 
-    def mxf_viot_track(self, current_frame, est_loc, valid_track):
-        return self.eth_viot_track(current_frame, est_loc, valid_track)
+    def mxf_ext_track(self, current_frame, est_loc, valid_track):
+        return self.eth_ext_track(current_frame, est_loc, valid_track)
 
-    def eth_viot_track(self, current_frame, est_loc, valid_track):
+    def eth_ext_track(self, current_frame, est_loc, valid_track):
         out = self.tracker.track(current_frame, FI=est_loc, do_learning=valid_track)
         return [int(s) for s in out['target_bbox']]
 
-    def cf_viot_track(self, current_frame, est_loc, valid_track):
+    def cf_ext_track(self, current_frame, est_loc, valid_track):
         return self.tracker.update(current_frame, vis=self.verbose, FI=est_loc, do_learning=valid_track)
 
     def mxf_raw_track(self, frame):
@@ -112,7 +116,7 @@ class PyTracker:
         if self.verbose is True:
             self.writer = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30, 
                                           (self.frameWidth, self.frameHeight))
-        ratios_path = self.data_path + "_ratios.txt"
+        ratios_path = self.data_path + "_params.txt"
         if os.path.exists(ratios_path):
             os.remove(ratios_path)
         pose3ds_path = self.data_path + "_pose3ds.txt"
@@ -138,7 +142,7 @@ class PyTracker:
 
     def log(self, pose, frame, log_nums, pose3d=None):
         np.savetxt(self.ratios_file, np.array(log_nums).reshape(1, -1), delimiter=", ")
-        if not pose3d is None:
+        if not pose3d is None and not pose3d[1] is None:
             np.savetxt(self.pose3ds_file, np.array(pose3d).reshape(1, -1), delimiter=", ")
         if self.writer is not None:
             self.writer.write(frame)
@@ -154,10 +158,10 @@ class PyTracker:
             self.eval0 = score
         ratio = score/self.eval0
         valid = ratio > self.ratio_thresh
-        return valid, keeps_on, [score, ratio]
+        return valid, keeps_on, score, ratio
 
     def process_viot(self, frame_list, states, init_gt):
-        kin = VIOTrack(self.interp_factor, self.frameWidth/2, self.frameHeight/2, w=self.frameWidth,
+        kin = VIOT(self.interp_factor, self.frameWidth/2, self.frameHeight/2, w=self.frameWidth,
                        h=self.frameHeight, hfov=self.fov, vis=False, ref=states[0,1:4])
         est_loc = tuple(init_gt)
         valid = True
@@ -165,7 +169,7 @@ class PyTracker:
         for idx in range(1, len(frame_list)):
             current_frame=cv2.imread(frame_list[idx])
             bbox = self.track(current_frame, est_loc, valid and keeps)
-            valid, keeps, log_nums = self.postProc(bbox)
+            valid, keeps, score, ratio = self.postProc(bbox)
             ## estimating next target location using kinematc model
             if valid:
                 est_loc, p = kin.updateRect3D(states[idx,:], current_frame, bbox)
@@ -176,7 +180,7 @@ class PyTracker:
             ## on motion model when the target is occluded
             self.viot_vis(sh_frame, est_loc)
             self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), sh_frame,
-                     log_nums, [idx, *p])
+                     [idx, score, ratio, valid], [idx, *p])
 
     def process_raw(self, frame_list, states, b=None):
         kin = CameraKinematics(cx=self.frameWidth/2, cy=self.frameHeight/2, w=self.frameWidth,
@@ -184,11 +188,33 @@ class PyTracker:
         for idx in range(1, len(frame_list)):
             current_frame=cv2.imread(frame_list[idx])
             bbox = self.track(current_frame)
-            valid, _, log_nums = self.postProc(bbox)
+            valid, _, score, ratio = self.postProc(bbox)
             sh_frame = self.visualize(current_frame, bbox, valid)
             self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), 
-                     sh_frame, log_nums, 
+                     sh_frame, [idx, score, ratio, valid], 
                      [idx, *kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])[0]])
+
+    def process_kpt(self, frame_list, states, init_gt):
+        kin = CameraKinematics(cx=self.frameWidth/2, cy=self.frameHeight/2, w=self.frameWidth,
+                               h=self.frameHeight, hfov=self.fov, ref=states[0,1:4])
+        kpt = EKFEstimator()
+        est_loc = tuple(init_gt)
+        valid = True
+        for idx in range(1, len(frame_list)-1):
+            current_frame=cv2.imread(frame_list[idx])
+            bbox = self.track(current_frame, est_loc, valid)
+            valid, _, score, ratio = self.postProc(bbox)
+            if valid:            
+                tgt_pos, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])
+            else:
+                _, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])
+                tgt_pos = None
+            tgt_next_pos = kpt.update(tgt_pos, states[idx,0], states[idx+1,0])
+            est_loc = kin.pose_to_limited_rect([*tgt_next_pos,0], cam_pos, states[idx,4:7], bbox)
+            
+            sh_frame = self.visualize(current_frame, bbox, valid)
+            self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), sh_frame,
+                     [idx, score, ratio, valid], [idx, tgt_next_pos[0], tgt_next_pos[1], 0])
 
     def tracking(self, data_name, frame_list, init_gt, states):
         init_frame = cv2.imread(frame_list[0])

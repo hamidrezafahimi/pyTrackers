@@ -9,6 +9,7 @@ class Datasets(Enum):
 class ExtType(Enum):
     raw = 0
     viot = 1
+    kpt = 2
 
 
 class Trackers(Enum):

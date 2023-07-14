@@ -9,7 +9,7 @@ sys.path.insert(0, root_path)
 from lib.utils import gps_to_ned, toSpherecalCoords, toCartesianCoords, angleDifference
 from .camera_kinematics import CameraKinematics
 
-class VIOTrack(CameraKinematics):
+class VIOT(CameraKinematics):
     def __init__(self, factor, cx, cy, ref, f=None, w=None, h=None, hfov=None, vis=True):
         super().__init__(ref, cx, cy, f, w, h, hfov)
         
@@ -94,7 +94,10 @@ class VIOTrack(CameraKinematics):
 
             ## convert body to cam coordinates
             cam_dir_est = self.body_to_cam(body_dir_est)
-
+            
+            ## Here there is no need to limit the obtained direction vectors into camera fov.
+            ## Because they are previously obtained from target rect, which obviously is within 
+            ## image frame 
             ## reproject to image plane
             center_est = self.from_direction_vector(cam_dir_est, self._cx, self._cy, self._f)
 
@@ -112,29 +115,15 @@ class VIOTrack(CameraKinematics):
 
         ## based on the estimated position for the target (if there is any), reproject and get an
         ## estimated center for search area within image
-        inertia_dir = self._pos_est - cam_pos
-        if np.linalg.norm(inertia_dir) != 0:
-
-            inertia_dir = inertia_dir / np.linalg.norm(inertia_dir)
-
-            ## convert new estimate of target direction vector to body coordinates
-            body_dir_est = self.inertia_to_body( inertia_dir, imu_meas)
-
-            ## convert body to cam coordinates
-            cam_dir_est = self.body_to_cam(body_dir_est)
-
-            cam_dir_est = self.limit_vector_to_fov(cam_dir_est)
-
-            ## reproject to image plane
-            center_est = self.from_direction_vector(cam_dir_est, self._cx, self._cy, self._f)
-
+        ret = self.pose_to_limited_rect(self._pos_est, cam_pos, imu_meas, self._last_rect)
         ## estimated rectangle is obtained based on estimated center point for target's next 
         ## position, or center point corresponding to last buffered position for target
-        rect_est = (int(center_est[0]-self._last_rect[2]/2), \
-                    int(center_est[1]-self._last_rect[3]/2),
-                    self._last_rect[2], self._last_rect[3])
-        # image = cv.putText(image, '{:d}, {:d}, {:d}'.format(center_est[0], center_est[1],
-        # len(vs)), (50, 50), cv.FONT_HERSHEY_SIMPLEX, 1, (0,255,255), 2, cv.LINE_AA)
+        if not ret is None:
+            rect_est = ret
+        else:
+            rect_est = (int(center_est[0]-self._last_rect[2]/2), \
+                        int(center_est[1]-self._last_rect[3]/2),
+                        self._last_rect[2], self._last_rect[3])
         return rect_est, self._pos_est
 
 

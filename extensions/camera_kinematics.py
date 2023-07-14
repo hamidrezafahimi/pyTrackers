@@ -150,3 +150,21 @@ class CameraKinematics:
         ## calculate target pos
         target_pos = self.scale_vector(inertia_dir, cam_pos[2]) + cam_pos
         return target_pos, cam_pos
+    
+    def pose_to_limited_rect(self, pose, cam_pos, imu_meas, rect_sample):
+        if pose is None or pose[0] is None:
+            return None
+        inertia_dir = pose - cam_pos
+        if np.linalg.norm(inertia_dir) != 0:
+            inertia_dir = inertia_dir / np.linalg.norm(inertia_dir)
+            ## convert new estimate of target direction vector to body coordinates
+            body_dir_est = self.inertia_to_body( inertia_dir, imu_meas)
+            ## convert body to cam coordinates
+            cam_dir_est = self.body_to_cam(body_dir_est)
+            cam_dir_est = self.limit_vector_to_fov(cam_dir_est)
+            ## reproject to image plane
+            center_est = self.from_direction_vector(cam_dir_est, self._cx, self._cy, self._f)
+            return (int(center_est[0]-rect_sample[2]/2), \
+                    int(center_est[1]-rect_sample[3]/2), rect_sample[2], rect_sample[3]) # rect_est
+        else:
+            return None
