@@ -1,0 +1,3 @@
+[submodule "trackers/pytracking"]
+	path = trackers/pytracking
+	url = https://github.com/hamidrezafahimi/pytracking.git

@@ -1,0 +1,4 @@
+tomp101:
+  type: tomp101
+  default_viot_ratio_thresh: 0.5
+  default_viot_interp_factor: 1

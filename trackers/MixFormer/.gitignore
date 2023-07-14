@@ -1,0 +1,10 @@
+*.idea
+*~
+*__pycache__*
+*.pyc
+*.pytest_cache
+*.csv
+local.py
+data
+*.pth
+*.tar

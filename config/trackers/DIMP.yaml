@@ -1,0 +1,9 @@
+dimp50:
+  type: dimp50
+  default_viot_ratio_thresh: 0.2
+  default_viot_interp_factor: 1.1
+
+prdimp50:
+  type: prdimp50
+  default_viot_ratio_thresh: 0.3
+  default_viot_interp_factor: 1

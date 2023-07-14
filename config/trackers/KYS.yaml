@@ -1,0 +1,4 @@
+default:
+  type: default
+  default_viot_ratio_thresh: 0.2
+  default_viot_interp_factor: 1.1

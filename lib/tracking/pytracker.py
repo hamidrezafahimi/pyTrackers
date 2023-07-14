@@ -4,7 +4,7 @@ import importlib
 import os
 from extensions.viot import VIOT
 from extensions.camera_kinematics import CameraKinematics
-from extensions.path_tracker import EKFEstimator
+# from extensions.path_tracker import EKFEstimator
 from lib.utils.vision import APCE,PSR
 from .types import ExtType
 import json
@@ -71,12 +71,13 @@ class PyTracker:
         return self.tracker.pred_score
 
     def eth_init(self, frame, bbox):
-        param_module = importlib.import_module('pytracking.parameter.{}.{}'
-                                               .format(self.trackerType.tag, self.trackerType.config))
+        param_module = importlib.import_module('pytracking.pytracking.parameter.{}.{}'
+                                               .format(self.trackerType.tag, 
+                                                       self.trackerType.config['type']))
         params = param_module.parameters()
         params.tracker_name = self.trackerType.tag
         params.param_name = params
-        tracker_module = importlib.import_module('pytracking.tracker.{}'.
+        tracker_module = importlib.import_module('pytracking.pytracking.tracker.{}'.
                                                  format(self.trackerType.tag))
         tracker_class = tracker_module.get_tracker_class()
         self.tracker = tracker_class(params)

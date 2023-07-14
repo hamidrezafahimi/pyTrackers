@@ -24,7 +24,7 @@ ratio_thresh:
   DIMP_dimp50: 0.2
   DIMP_prdimp50: 0.3
   KYS_default: 0.2
-  TOMP_default: 0.5
+  TOMP_tomp101: 0.5
   MIXFORMER_vit: 0.995
   ECO_default: 0.5
 
@@ -148,7 +148,7 @@ interp_factor:
     park_mavic_7: 1.1
     soccerfield_mavic_3: 1.1
     soccerfield_mavic_4: 1.1
-  TOMP_default:
+  TOMP_tomp101:
     cup_0.5HZ: 1
     cup_0.9HZ: 1
     cup_1.1HZ: 1
