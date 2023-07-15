@@ -1,10 +1,9 @@
-import cv2
+import cv2  
 import numpy as np
 import importlib
 import os
-from extensions.viot import VIOT
-from extensions.camera_kinematics import CameraKinematics
-# from extensions.path_tracker import EKFEstimator
+from extensions.viot.viot import VIOT
+from extensions.viot.camera_kinematics import CameraKinematics
 from lib.utils.vision import APCE,PSR
 from .types import ExtType
 import json
@@ -12,7 +11,8 @@ import sys
 from pathlib import Path
 root_path = str(Path(__file__).parent.resolve()) + "/../.."
 sys.path.insert(0, root_path + "/trackers")
-
+# import extensions.viot2.vot_api as vapi
+from extensions.path_tracker.api.vot_api import VOTPathObserver
 
 class PyTracker:
     def __init__(self, img_dir, tracker_title, dataset_config, ext_type, verbose, plot_path=False):
@@ -179,6 +179,7 @@ class PyTracker:
             sh_frame = self.visualize(current_frame, bbox, valid)
             ## Calling the following function leads to drawing a point being updated - only - based
             ## on motion model when the target is occluded
+            # print(est_loc)
             self.viot_vis(sh_frame, est_loc)
             self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), sh_frame,
                      [idx, score, ratio, valid], [idx, *p])
@@ -198,7 +199,7 @@ class PyTracker:
     def process_kpt(self, frame_list, states, init_gt):
         kin = CameraKinematics(cx=self.frameWidth/2, cy=self.frameHeight/2, w=self.frameWidth,
                                h=self.frameHeight, hfov=self.fov, ref=states[0,1:4])
-        kpt = EKFEstimator()
+        kpt = VOTPathObserver()
         est_loc = tuple(init_gt)
         valid = True
         for idx in range(1, len(frame_list)-1):
@@ -210,10 +211,12 @@ class PyTracker:
             else:
                 _, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])
                 tgt_pos = None
-            tgt_next_pos = kpt.update(tgt_pos, states[idx,0], states[idx+1,0])
+            tgt_next_pos = kpt.doPrediction(tgt_pos, states[idx,0], states[idx+1,0])
             est_loc = kin.pose_to_limited_rect([*tgt_next_pos,0], cam_pos, states[idx,4:7], bbox)
             
             sh_frame = self.visualize(current_frame, bbox, valid)
+            if not est_loc is None:
+                self.viot_vis(sh_frame, est_loc)
             self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), sh_frame,
                      [idx, score, ratio, valid], [idx, tgt_next_pos[0], tgt_next_pos[1], 0])
 

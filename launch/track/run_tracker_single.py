@@ -6,7 +6,8 @@ from lib.tracking.types import ExtType, Trackers, Datasets
 from lib.tracking.run import run_once
 
 dataset_type = Datasets.VIOT
-ext_type = ExtType.viot
+ext_type = ExtType.kpt
+# ext_type = ExtType.viot
 data_name = "park_mavic_1"
 start_frame = 110
 end_frame = 191

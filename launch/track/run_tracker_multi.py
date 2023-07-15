@@ -36,7 +36,7 @@ tr_lists = [
     # [Trackers.DIMP, 'dimp50'],
     # [Trackers.DIMP, 'prdimp50'],
     # [Trackers.KYS, 'default'],
-    # [Trackers.TOMP, 'default'],
+    # [Trackers.TOMP, 'tomp101'],
     [Trackers.MIXFORMER, 'vit']
 ]
 
@@ -46,5 +46,5 @@ if __name__ == '__main__':
         for d_name in data_names:
             data_path = pth + "/dataset/VIOT/" + d_name
             run_once(data_path=data_path, tracker_type=tr_list[0], 
-                     tracker_variant=tr_list[1], ext_type=ext_type, 
+                     tracker_variant=tr_list[1], ext_type=ext_type, dataset_type=dataset_type,
                      start_frame=data_names[d_name][0], end_frame=data_names[d_name][0])

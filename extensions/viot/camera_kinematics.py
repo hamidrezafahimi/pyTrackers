@@ -150,6 +150,9 @@ class CameraKinematics:
         ## calculate target pos
         target_pos = self.scale_vector(inertia_dir, cam_pos[2]) + cam_pos
         return target_pos, cam_pos
+
+    def rect_to_corners(self, rect, imu_meas, cam_ps):
+        pass
     
     def pose_to_limited_rect(self, pose, cam_pos, imu_meas, rect_sample):
         if pose is None or pose[0] is None:
