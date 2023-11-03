@@ -27,7 +27,7 @@ Do in order:
 
 ```
 pip install torch==1.13.1 torchvision
-
+pip install matplotlib
 pip install utm
 pip install visdom
 pip install spatial-correlation-sampler
@@ -37,8 +37,9 @@ pip install timm
 pip install einops
 pip install lmdb
 pip install opencv-python
-
 pip install --upgrade scikit-image
+pip install easydict
+pip install tensorboardX
 ``` 
 
 #### Download and Import Requred Data:

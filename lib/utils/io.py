@@ -14,14 +14,14 @@ def write_target_poses_ned(d_path, d_name, sts):
     target_gt_path = d_path + "/target_poses.txt"
     fgtl = FlatGroundTargetLocator(target_gt_path, sts[0,1:4])
     target_poses_ned = fgtl.calc_target_ned_poses(sts)
-    tpf = open(root_path + "/results/"+d_name+"_target_poses.txt", 'w')
+    tpf = open(root_path + "/results/" + d_name + "_target_poses.txt", 'w')
     np.savetxt(tpf, target_poses_ned, delimiter=", ")
     tpf.close()
 
 def write_gt(gts, sts, d_path):#, write_target_gt=True):
     d_name = Path(d_path).stem
     write_target_poses_ned(d_path, d_name, sts)
-    csf = open(root_path + "/results/"+d_name+"_cam_poses.txt", 'w')
+    csf = open(root_path + "/results/"+d_name+"_cam_states.txt", 'w')
     camera_poses_ned = all_to_ned(sts)
     np.savetxt(csf, camera_poses_ned, delimiter=", ")
     csf.close()

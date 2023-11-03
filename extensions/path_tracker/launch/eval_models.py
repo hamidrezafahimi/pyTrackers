@@ -5,15 +5,15 @@ from pathlib import Path
 pth = str(Path(__file__).parent.resolve()) + "/../.."
 sys.path.append(pth)
 from path_tracker.handy_libs import plot_now, get_file_list, get_module_function_names
-from path_tracker.lib import eval_model
+from path_tracker.src import eval_model
 import sys
 from pathlib import Path
-import lib.models.functions as lm
+import src.models.functions as lm
 
 # For all the functions in the following module:
-functions = get_module_function_names(pth + "/path_tracker/lib/models/functions.py")
+functions = get_module_function_names(pth + "/path_tracker/src/models/functions.py")
 # For all the pose data in the following directory:
-files = get_file_list("/home/hamid/w/REPOS/pyTrackers/results", ".txt")
+files = get_file_list("/home/hamid/w/DATA/plot", ".txt")
 # This program calculates the mean error for predicting n steps forward and compares 
 # them in a plot
 

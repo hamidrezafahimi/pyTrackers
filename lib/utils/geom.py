@@ -5,7 +5,7 @@ def all_to_ned(data):
     ref_loc = data[0,1:4]
     out = []
     for k in range(data.shape[0]):
-        out.append([data[k,0], *gps_to_ned(ref_loc, data[k,1:4])])
+        out.append([data[k,0], *gps_to_ned(ref_loc, data[k,1:4]), *data[k,4:]])
     return np.array(out)
 
 def all_to_utm(data):

@@ -6,8 +6,8 @@ from handy_libs import calc_eucl_dist
 
 def eval_model_1d(data, function):
     l = len(data)
-    buf_len = 30
-    pred_len = 30
+    buf_len = 40
+    pred_len = 50
     errors = None
     for k in range((buf_len-1), l-pred_len):
         ts = data[k-(buf_len-1):k+1,0]
@@ -34,8 +34,8 @@ def eval_model_1d(data, function):
 
 def eval_model(data, function):
     l = len(data)
-    buf_len = 30
-    pred_len = 30
+    buf_len = 40
+    pred_len = 50
     errors = None
     for k in range((buf_len-1), l-pred_len):
         times = data[k-(buf_len-1):k+1,0]

@@ -1,5 +1,30 @@
-import scipy as sp
+import scipy.interpolate as spi
 import numpy as np
+
+def calc_1st_dv(inp, t, idx):
+    if idx == 0 or idx >= len(t) or len(inp) != len(t):
+        raise Exception("bad input")
+    return ((inp[idx]-inp[idx-1])/(t[idx]-t[idx-1]))
+
+def calc_2nd_dv(inp, t, idx=None):
+    if idx is None:
+        idx = len(t)-1
+    if idx <= 1 or idx >= len(t) or len(inp) != len(t):
+        raise Exception("bad input")
+    return ((calc_1st_dv(inp, t, idx)-calc_1st_dv(inp, t, idx))/(t[idx]-t[idx-1]))
+
+def calc_1st_dv_all(inp, t):
+    out = []
+    for k in range(1, len(inp)):
+        out.append((inp[k]-inp[k-1])/(t[k]-t[k-1]))
+    return out
+
+def calc_2nd_dv_all(inp, t):
+    out = []
+    out = []
+    for k in range(2, len(inp)):
+        out.append((calc_1st_dv(inp, t, k)-calc_1st_dv(inp, t, k-1))/(t[k]-t[k-1]))
+    return out
 
 def output_model(model, new_times, t):
     if not new_times is None:
@@ -13,16 +38,26 @@ def output_model(model, new_times, t):
         raise Exception("One of 'new_times' or 't' must be set")
 
 def cubic_spline_notAknot_1d(ts, vals, new_times=None, t=None):
-    return output_model(sp.interpolate.CubicSpline(ts, vals, bc_type='not-a-knot'), 
+    return output_model(spi.CubicSpline(ts, vals, bc_type='not-a-knot'), 
                         new_times, t)
 
 def cubic_spline_natural_1d(ts, vals, new_times=None, t=None):
-    return output_model(sp.interpolate.CubicSpline(ts, vals, bc_type='natural'), 
+    return output_model(spi.CubicSpline(ts, vals, bc_type='natural'), 
                         new_times, t)
 
+def cubic_spline_keepCurve_1d(ts, vals, new_times=None, t=None):
+    my_end_dd = calc_2nd_dv(vals, ts)
+    my_start_dd = calc_2nd_dv(vals, ts, 2)
+    model = spi.CubicSpline(ts, vals, bc_type=((2, my_start_dd), (2, my_end_dd)))
+    return output_model(model, new_times, t)
+
 def cubic_spline_clamped_1d(ts, vals, new_times=None, t=None):
-    return output_model(sp.interpolate.CubicSpline(ts, vals, bc_type='clamped'), 
+    return output_model(spi.CubicSpline(ts, vals, bc_type='clamped'), 
                         new_times, t)
+
+def quadratic_spline_1d(ts, vals, new_times=None, t=None):
+    return output_model(spi.interp1d(ts, vals, kind='quadratic', 
+                                                fill_value='extrapolate'), new_times, t)
 
 def linear_avg_velocity_1d(ts, _pos_buff, new_times=None, t=None):#,_interp_factor=1):
     ## calculate velocities for each consecutive pair of buffered target positions (used to 

@@ -10,6 +10,8 @@ class EKFEstimator:
         # self.model_y = Modeler1D(type = ModelType1D.CUBIC_SPLINE)
         self.model_x = Modeler1D(type = ModelType1D.LINEAR)
         self.model_y = Modeler1D(type = ModelType1D.LINEAR)
+        # self.model_x = Modeler1D(type = ModelType1D.QUADRATIC_SPLINE)
+        # self.model_y = Modeler1D(type = ModelType1D.QUADRATIC_SPLINE)
         self.P = 100 * np.eye(2)
         self.x = np.array([[0],[0]])	
         self.H = np.eye(2)

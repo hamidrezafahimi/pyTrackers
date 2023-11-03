@@ -3,19 +3,22 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.resolve()) + "/..")
 from buffering.pathBuffering import PathBufferer1D
-from .functions import linear_delayed, linear
-from .utils import cubic_spline_natural_1d, linear_avg_velocity_1d
+from .functions import linear_delayed#, linear
+from .utils import cubic_spline_natural_1d, linear_avg_velocity_1d, quadratic_spline_1d
 import numpy as np
 
 class ModelType1D(Enum):
     LINEAR = 1
-    CUBIC_SPLINE = 2
+    QUADRATIC_SPLINE =2
+    CUBIC_SPLINE = 3
 
 class Modeler1D:
     def __init__(self, type: ModelType1D):
         self.buffer = PathBufferer1D()
         if type == ModelType1D.CUBIC_SPLINE:
             self.model = cubic_spline_natural_1d
+        if type == ModelType1D.QUADRATIC_SPLINE:
+            self.model = quadratic_spline_1d
         elif type == ModelType1D.LINEAR:
             # self.model = linear_delayed
             # self.model = linear
