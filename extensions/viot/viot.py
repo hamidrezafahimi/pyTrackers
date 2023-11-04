@@ -7,7 +7,7 @@ from pathlib import Path
 root_path = str(Path(__file__).parent.resolve()) + "/../.."
 sys.path.insert(0, root_path)
 from lib.utils import gps_to_ned, toSpherecalCoords, toCartesianCoords, angleDifference
-from .camera_kinematics import CameraKinematics
+from extensions.camera_kinematics import CameraKinematics
 
 class VIOT(CameraKinematics):
     def __init__(self, factor, cx, cy, ref, f=None, w=None, h=None, hfov=None, vis=True):

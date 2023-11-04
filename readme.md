@@ -1,5 +1,5 @@
 # pyTrackers
-This repository contains implementation of some major correlation filter based trackers cloned from [pyCFTrackers](https://github.com/fengyang95/pyCFTrackers) repo and some deep learning trackers taken from [pytracking](https://github.com/fengyang95/pyCFTrackers). Modifications of their algorithms are made so that they can be benefit from camera state mesurements. The algorithms are evaluated on a custom dataset named [VIOT dataset](https://drive.google.com/file/d/1xYHGJR-UWccPzbIuzMU_yf0bSkQ42qQh/view?usp=sharing). 
+This repository contains implementation of some major correlation filter based trackers cloned from [pyCFTrackers](https://github.com/fengyang95/pyCFTrackers) repo and some deep learning trackers taken from [pytracking](https://github.com/fengyang95/pyCFTrackers). Modifications of their algorithms are made so that they can be benefit from camera state measurements. The algorithms are evaluated on a custom dataset named [VIOT dataset](https://drive.google.com/file/d/1xYHGJR-UWccPzbIuzMU_yf0bSkQ42qQh/view?usp=sharing). 
 
 ## Setup
 
@@ -10,6 +10,16 @@ A best experience is to run the code on a cloab notebook. For running the codes 
 ### Running in Local System
 
 To run the code in a local host, first clone the repository:
+
+#### Prerequisites
+
+Tested on the following platform:
+
+```
+ubuntu 20.04
+pytorch 1.13.1
+cuda 11.7
+```
 
 #### Create virtual environment:
 

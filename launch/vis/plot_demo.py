@@ -9,7 +9,6 @@ if __name__ == '__main__':
 
     target_poses_ned = np.loadtxt(data_path+'park_mavic_1_target_poses.txt', delimiter=',')
     camera_poses_ned = np.loadtxt(data_path+'park_mavic_1_cam_poses.txt', delimiter=',')
-    kpt_poses_ned = np.loadtxt(data_path+'MIXFORMER_park_mavic_1_kpt_poses.txt', delimiter=',')
 
     num_of_numbers = target_poses_ned.shape[0]
 

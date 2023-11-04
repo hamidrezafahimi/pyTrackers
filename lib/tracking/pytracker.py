@@ -3,7 +3,7 @@ import numpy as np
 import importlib
 import os
 from extensions.viot.viot import VIOT
-from extensions.viot.camera_kinematics import CameraKinematics
+from extensions.camera_kinematics import CameraKinematics
 from lib.utils.vision import APCE,PSR
 from .types import ExtType
 import json
@@ -12,7 +12,8 @@ from pathlib import Path
 root_path = str(Path(__file__).parent.resolve()) + "/../.."
 sys.path.insert(0, root_path + "/trackers")
 import matplotlib.pyplot as plt
-# from extensions.aerial_tracker import predict
+from extensions.aerial_tracker import AerialTracker
+import time
 
 class PyTracker:
     def __init__(self, img_dir, tracker_title, dataset_config, ext_type, verbose):
@@ -200,18 +201,18 @@ class PyTracker:
                      [idx, *kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])[0]])
 
     def process_kpt(self, frame_list, states, b=None):
-        kin = CameraKinematics(cx=self.frameWidth/2, cy=self.frameHeight/2, w=self.frameWidth,
-                               h=self.frameHeight, hfov=self.fov, ref=states[0,1:4])
+        # kin = AerialTracker(wps=states[:,1:4], vr=30, map_height=1000, map_width=1000,
+        #                     cx=self.frameWidth/2, cy=self.frameHeight/2, w=self.frameWidth,
+        #                     h=self.frameHeight, hfov=self.fov)
+        # print(states[:,1:4])
+        # time.sleep(1000)
         for idx in range(1, len(frame_list)):
             current_frame = cv2.imread(frame_list[idx])
             bbox = self.track(current_frame, None, None)
             valid, _, score, ratio = self.postProc(bbox)
-            tgt_est_pos, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])
+            # kin.predict(states[idx,4:7], states[idx,1:4])
             sh_frame = self.visualize(current_frame, bbox, valid)
             # self.visualize_ext(tgt_est_pos, cam_pos)
-            self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]),
-                     sh_frame, [idx, score, ratio, valid], 
-                     [idx, *tgt_est_pos, *cam_pos])
 
     # def process_kpt(self, frame_list, states, init_gt):
     #     kin = CameraKinematics(cx=self.frameWidth/2, cy=self.frameHeight/2, w=self.frameWidth,

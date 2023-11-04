@@ -1,1 +1,1 @@
-from .tracker import predict
+from .tracker import AerialTracker

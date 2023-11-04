@@ -1,4 +1,0 @@
-[submodule "handy_libs"]
-	path = handy_libs
-	url = https://github.com/hamidrezafahimi/handy_libs.git
-	branch = master

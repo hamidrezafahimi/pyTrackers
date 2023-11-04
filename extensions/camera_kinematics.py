@@ -120,13 +120,13 @@ class CameraKinematics:
             # print("in ", reproj)
             return vector
 
-    def get_camera_frame_vecs(self, eul, w, h):
+    def get_camera_frame_vecs(self, eul):
         ## convert image corners from a point in "image coordinates" to a vector
         ## in "camera body coordinates"
         top_left = self.cam_to_body([-1,-1,2,2])
-        top_right = self.cam_to_body([w-1,-1,2,2])
-        bottom_left = self.cam_to_body([-1,h-1,2,2])
-        bottom_right = self.cam_to_body([w-1,h-1,2,2])
+        top_right = self.cam_to_body([self._w-1,-1,2,2])
+        bottom_left = self.cam_to_body([-1,self._h-1,2,2])
+        bottom_right = self.cam_to_body([self._w-1,self._h-1,2,2])
         ## convert image corners from a vector in "camera body coordinates" to
         ## a vector in "inertial coordinates"
         top_left_inertia_dir = self.body_to_inertia(top_left, eul)
@@ -151,9 +151,17 @@ class CameraKinematics:
         target_pos = self.scale_vector(inertia_dir, cam_pos[2]) + cam_pos
         return target_pos, cam_pos
 
-    def rect_to_corners(self, rect, imu_meas, cam_ps):
-        pass
-    
+    def get_camera_fov_area(self, imu_meas, cam_ps):
+        top_left_inertia_dir,top_right_inertia_dir,\
+            bottom_left_inertia_dir,bottom_right_inertia_dir = \
+            self.get_camera_frame_vecs(imu_meas)
+        cam_pos = gps_to_ned(self.ref_loc, cam_ps)
+        pos1 = self.scale_vector(top_left_inertia_dir, cam_ps[2]) + cam_pos
+        pos2 = self.scale_vector(top_right_inertia_dir, cam_ps[2]) + cam_pos
+        pos3 = self.scale_vector(bottom_left_inertia_dir, cam_ps[2]) + cam_pos
+        pos4 = self.scale_vector(bottom_right_inertia_dir, cam_ps[2]) + cam_pos
+        return pos1, pos2, pos3, pos4
+
     def pose_to_limited_rect(self, pose, cam_pos, imu_meas, rect_sample):
         if pose is None or pose[0] is None:
             return None
