@@ -201,16 +201,14 @@ class PyTracker:
                      [idx, *kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])[0]])
 
     def process_kpt(self, frame_list, states, b=None):
-        # kin = AerialTracker(wps=states[:,1:4], vr=30, map_height=1000, map_width=1000,
-        #                     cx=self.frameWidth/2, cy=self.frameHeight/2, w=self.frameWidth,
-        #                     h=self.frameHeight, hfov=self.fov)
-        # print(states[:,1:4])
-        # time.sleep(1000)
+        kin = AerialTracker(wps=states[:,1:4], vr=50, map_height=500, map_width=500,
+                            cx=self.frameWidth/2, cy=self.frameHeight/2, w=self.frameWidth,
+                            h=self.frameHeight, hfov=self.fov)
         for idx in range(1, len(frame_list)):
             current_frame = cv2.imread(frame_list[idx])
             bbox = self.track(current_frame, None, None)
             valid, _, score, ratio = self.postProc(bbox)
-            # kin.predict(states[idx,4:7], states[idx,1:4])
+            kin.predict(states[idx,4:7], states[idx,1:4])
             sh_frame = self.visualize(current_frame, bbox, valid)
             # self.visualize_ext(tgt_est_pos, cam_pos)
 

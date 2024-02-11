@@ -1,5 +1,6 @@
 import numpy as np
 import utm
+import time
 
 def all_to_ned(data):
     ref_loc = data[0,1:4]

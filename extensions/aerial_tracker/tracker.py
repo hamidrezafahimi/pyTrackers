@@ -3,18 +3,23 @@ from pathlib import Path
 root_path = str(Path(__file__).parent.resolve()) + "/../.."
 sys.path.insert(0, root_path)
 from extensions.camera_kinematics import CameraKinematics
+from lib.utils.geom import gps_to_ned
 from matplotlib import pyplot as plt
 from .utils import calc_ground_range
 import cv2 as cv
 import numpy as np
+import time
+import copy
 
 class AerialTracker(CameraKinematics):
-    def __init__(self, wps, vr, map_width, map_height, cx, cy, f=None, w=None, h=None, hfov=None):
+    def __init__(self, wps, map_width, map_height, cx, cy, vr=100, f=None, w=None, h=None, hfov=None):
+        super().__init__(copy.deepcopy(wps[0]), cx, cy, f, w, h, hfov)
         self._visualRange = vr
-        self._wps = wps
+        self._wps = []
+        for k in range(wps.shape[0]):
+            self._wps.append([*gps_to_ned(self.ref_loc, wps[k])])
         self.__mapWidth = map_width
         self.__mapHeight = map_height
-        super().__init__(self._wps[0], cx, cy, f, w, h, hfov)
         # self.ax = plt.figure().add_subplot(111, projection='3d')
         # self.ax.view_init(elev=-140, azim=-60)
         self.__initNormalization()
@@ -24,6 +29,8 @@ class AerialTracker(CameraKinematics):
     def predict(self, imu_meas, cam_ps):
         # self.ax.cla()
         pos1, pos2, pos3, pos4 = self.get_camera_fov_area(imu_meas, cam_ps)
+        # print(self.__NED2IMG(pos1), self.__NED2IMG(pos2), self.__NED2IMG(pos3), self.__NED2IMG(pos4))
+        # time.sleep(1)
         cv.circle(self.map, self.__NED2IMG(pos1), 2, (255, 255, 255), 2)
         cv.circle(self.map, self.__NED2IMG(pos2), 2, (255, 255, 255), 2)
         cv.circle(self.map, self.__NED2IMG(pos3), 2, (255, 255, 255), 2)
@@ -41,11 +48,17 @@ class AerialTracker(CameraKinematics):
         maxX = -1e6
         maxY = -1e6
         for wp in self._wps:
-            r = calc_ground_range(wp[2], self._visualRange)
+            r = calc_ground_range(abs(wp[2]), self._visualRange)
             dist_x_high = wp[0] + r
             dist_x_low = wp[0] - r
             dist_y_high = wp[1] + r
             dist_y_low = wp[1] - r
+            # print(wp)
+            # print(self._visualRange)
+            # print(r)
+            # print(dist_x_high, dist_x_low, dist_y_high, dist_y_low)
+            # time.sleep(2)
+            # print(".......")
             if minX > dist_x_low:
                 minX = dist_x_low
             if maxX < dist_x_high:
@@ -62,5 +75,10 @@ class AerialTracker(CameraKinematics):
     
     def __NED2IMG(self, pnt):
         inertia_x, inertia_y, _ = pnt
-        return (int((inertia_x - self.__minX) / self.__mppr_x), 
-                int((inertia_y- self.__minY) / self.__mppr_y))
+        pixel_x = int((inertia_x - self.__minX) / self.__mppr_x)
+        pixel_y = int((inertia_y - self.__minY) / self.__mppr_y)
+        # print(inertia_x, self.__minX, pixel_x)
+        # print(inertia_y, self.__minY, pixel_y)
+        # print("--------")
+        # time.sleep(1)
+        return (pixel_x, pixel_y)
