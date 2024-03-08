@@ -155,12 +155,15 @@ class CameraKinematics:
         top_left_inertia_dir,top_right_inertia_dir,\
             bottom_left_inertia_dir,bottom_right_inertia_dir = \
             self.get_camera_frame_vecs(imu_meas)
-        cam_pos = gps_to_ned(self.ref_loc, cam_ps)
+        cam_pos = self.get_cam_pos_ned(cam_ps)
         pos1 = self.scale_vector(top_left_inertia_dir, cam_ps[2]) + cam_pos
         pos2 = self.scale_vector(top_right_inertia_dir, cam_ps[2]) + cam_pos
         pos3 = self.scale_vector(bottom_left_inertia_dir, cam_ps[2]) + cam_pos
         pos4 = self.scale_vector(bottom_right_inertia_dir, cam_ps[2]) + cam_pos
         return pos1, pos2, pos3, pos4
+
+    def get_cam_pos_ned(self, cam_ps):
+        return gps_to_ned(self.ref_loc, cam_ps)
 
     def pose_to_limited_rect(self, pose, cam_pos, imu_meas, rect_sample):
         if pose is None or pose[0] is None:

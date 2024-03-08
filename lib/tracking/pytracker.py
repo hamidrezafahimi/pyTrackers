@@ -201,7 +201,7 @@ class PyTracker:
                      [idx, *kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])[0]])
 
     def process_kpt(self, frame_list, states, b=None):
-        kin = AerialTracker(wps=states[:,1:4], vr=50, map_height=500, map_width=500,
+        kin = AerialTracker(wps=states[:,1:4], vr=50, mppr=0.15,
                             cx=self.frameWidth/2, cy=self.frameHeight/2, w=self.frameWidth,
                             h=self.frameHeight, hfov=self.fov)
         for idx in range(1, len(frame_list)):

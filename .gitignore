@@ -13,6 +13,7 @@ results/
 *.pth
 *.tar
 *.pdf
+*.swp
 # /eval/test
 # .eval/log_test.txt
 # .eval/log_test_vot2016.txt

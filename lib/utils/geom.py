@@ -23,6 +23,7 @@ def utm_to_ned(ref_loc, loc):
 
 def latLon_to_utm(loc):
     y, x, _, _ = utm.from_latlon(loc[0], loc[1])
+    # easting, northing, zone_number, zone_letter = utm.from_latlon(lat, lon)
     return [x, y]
 
 def gps_to_ned(ref_loc, loc):
