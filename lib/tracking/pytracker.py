@@ -208,7 +208,15 @@ class PyTracker:
             current_frame = cv2.imread(frame_list[idx])
             bbox = self.track(current_frame, None, None)
             valid, _, score, ratio = self.postProc(bbox)
-            kin.predict(states[idx,4:7], states[idx,1:4])
+            tgt_pos = None
+            target_pose = None
+            if valid:            
+                tgt_pos, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])
+                target_pose = [states[idx,0], tgt_pos[0], tgt_pos[1]]
+            else:
+                _, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])
+            
+            kin.predict(states[idx,4:7], states[idx,1:4], target_pose)
             sh_frame = self.visualize(current_frame, bbox, valid)
             # self.visualize_ext(tgt_est_pos, cam_pos)
 
@@ -303,7 +311,7 @@ class PyTracker:
             show_frame = cv2.line(show_frame, (int(x1+w), int(y1)), (int(x1), int(y1 + h)), (0, 0, 255), 2)
         self.type_visualize(show_frame=show_frame, current_frame=current_frame, bbox=bbox)
         cv2.imshow('demo', show_frame)
-        cv2.waitKey(1)
+        cv2.waitKey(10000)
         return show_frame
     
     def visualize_kpt(self, frame):
