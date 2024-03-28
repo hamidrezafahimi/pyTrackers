@@ -149,9 +149,6 @@ class CameraKinematics:
         inertia_dir = self.body_to_inertia(body_dir, imu_meas)
         ## calculate target pos
         target_pos = self.scale_vector(inertia_dir, cam_pos[2]) + cam_pos
-        print("in rect to pose --------- ")
-        print("rect: ", rect)
-        print("target_pos: ", target_pos)
         return target_pos, cam_pos
 
     def get_camera_fov_area(self, imu_meas, cam_ps):
@@ -163,11 +160,6 @@ class CameraKinematics:
         pos2 = self.scale_vector(top_right_inertia_dir, cam_ps[2]) + cam_pos
         pos3 = self.scale_vector(bottom_left_inertia_dir, cam_ps[2]) + cam_pos
         pos4 = self.scale_vector(bottom_right_inertia_dir, cam_ps[2]) + cam_pos
-        print("in get_camera_fov_area ---------- ")
-        print("pos1: ", pos1)
-        print("pos2: ", pos2)
-        print("pos3: ", pos3)
-        print("pos4: ", pos4)
         return pos1, pos2, pos3, pos4
 
     def get_cam_pos_ned(self, cam_ps):

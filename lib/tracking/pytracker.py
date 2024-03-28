@@ -311,7 +311,7 @@ class PyTracker:
             show_frame = cv2.line(show_frame, (int(x1+w), int(y1)), (int(x1), int(y1 + h)), (0, 0, 255), 2)
         self.type_visualize(show_frame=show_frame, current_frame=current_frame, bbox=bbox)
         cv2.imshow('demo', show_frame)
-        cv2.waitKey(10000)
+        cv2.waitKey(1)
         return show_frame
     
     def visualize_kpt(self, frame):
