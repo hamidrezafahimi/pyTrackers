@@ -8,7 +8,7 @@ data_path = str(Path(__file__).parent.resolve()) + "/../../results/"
 if __name__ == '__main__':
 
     target_poses_ned = np.loadtxt(data_path+'park_mavic_1_target_poses.txt', delimiter=',')
-    camera_poses_ned = np.loadtxt(data_path+'park_mavic_1_cam_poses.txt', delimiter=',')
+    camera_poses_ned = np.loadtxt(data_path+'park_mavic_1_cam_states.txt', delimiter=',')
 
     num_of_numbers = target_poses_ned.shape[0]
 
@@ -27,8 +27,8 @@ if __name__ == '__main__':
         ax.plot3D([target_poses_ned[i, 1], camera_poses_ned[i, 1]],
                   [target_poses_ned[i, 2], camera_poses_ned[i, 2]],
                   [target_poses_ned[i, 3], camera_poses_ned[i, 3]], '--')
-        if i > 50:
-            oldIdx = 50
+        if i > 100:
+            oldIdx = 100
         else:
             oldIdx = i
         ax.plot3D(target_poses_ned[i-oldIdx:i, 1], target_poses_ned[i-oldIdx:i, 2], 

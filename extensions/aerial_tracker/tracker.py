@@ -10,6 +10,7 @@ import cv2 as cv
 import numpy as np
 import time
 import copy
+from .mmodel import EKFEstimator
 
 ## NOTE:
 # The geographic directions in the map image:
@@ -45,7 +46,8 @@ class AerialTracker(CameraKinematics):
         self.object_pose_buffer = np.array([])
         self.object_pose_buffer_len = 30
         self.const_dt = 0.2
-        self.object_points = []
+        self.object_points_pix = []
+        self.estimator = EKFEstimator()
 
 
     def scan(self, imu_meas, cam_ps):
@@ -81,42 +83,69 @@ class AerialTracker(CameraKinematics):
         return pan_scan
     
 
-    def updateMap(self):
+    def updateMap(self, est_pos_ned, fitted_spline=None):
         # TODO: Only render the area which is to be cropped
         newMap = np.zeros((self.__mapHeight_pix, self.__mapWidth_pix, 1), np.uint8)
-        #for pt in self.object_points:
-        #    cv.circle(newMap, (pt[0], pt[1]), 2, 127, 2)
-        prob_points_ned = predict_linear_probs(self.object_pose_buffer[:,0], self.object_pose_buffer[:,1], self.object_pose_buffer[:,2], self.const_dt, self.v_std_dev, self.beta_std_dev, self.samples_num)
+
+        ## visualize the polynomial which the estimator has fitted to target's path
+        if not fitted_spline is None:
+            for k in range(1, fitted_spline.shape[0]):
+                pt1 = NED2IMG_single(fitted_spline[k-1, 0], fitted_spline[k-1, 1], self.__minX, self.__minY, self.__mppr)
+                pt2 = NED2IMG_single(fitted_spline[k, 0], fitted_spline[k, 1], self.__minX, self.__minY, self.__mppr)
+                cv.line(newMap, (pt1[0], pt1[1]), (pt2[0], pt2[1]), 200, thickness=1)
+
+        self.map = newMap.copy()
+        ts = self.object_pose_buffer[:,0]
+        xs = self.object_pose_buffer[:,1]
+        ys = self.object_pose_buffer[:,2]
+        prob_points_ned = predict_linear_probs(ts, xs, ys, self.const_dt, self.v_std_dev, 
+                                               self.beta_std_dev, self.samples_num)
+        # prob_points_ned = predict_linear_probs(ts, xs, ys, self.const_dt, est_pos_ned[0],
+        #                                        est_pos_ned[1], self.v_std_dev, 
+        #                                        self.beta_std_dev, self.samples_num)
         prob_points_pix = NED2IMG_array(prob_points_ned, self.__minX, self.__minY, self.__mppr)
         l = prob_points_ned.shape[0]
         for k in range(l):
             j, i = prob_points_pix[k, 0], prob_points_pix[k, 1] 
             if newMap[i,j] < 255:
                 newMap[i, j] += 1
-        newMap = cv.GaussianBlur(newMap,(11,11),0)
-        self.map = cv.equalizeHist(newMap)
+        # newMap = cv.GaussianBlur(newMap,(11,11),0)
+        newMap = cv.equalizeHist(newMap)
+
+        ## visualize prior positions of the target 
+        # for pt in self.object_points_pix:
+        #     cv.circle(newMap, (pt[0], pt[1]), 2, 127, 2)
+        #if not est_pos_ned is None:
+        #    pt_next = NED2IMG_single(est_pos_ned[0], est_pos_ned[1], self.__minX, self.__minY, self.__mppr)
+        #    cv.circle(newMap, (pt_next[0], pt_next[1]), 2, 255, 2)
+        self.map = newMap
 
 
-    def predict(self, imu_meas, cam_ps, object_pose, score_map=None):
+    def predict(self, imu_meas, cam_ps, object_pose, t, score_map=None):
         # buffer last object poses
-        if not object_pose is None:
-            pt = NED2IMG_single(object_pose[1], object_pose[2], self.__minX, self.__minY, self.__mppr)
-            self.object_points.append(pt)
-
         if object_pose is None:
-            pass
+            obj_xy_ned = None
+        else:
+            pt = NED2IMG_single(object_pose[1], object_pose[2], self.__minX, self.__minY, self.__mppr)
+            self.object_points_pix.append(pt)
+            obj_xy_ned = [object_pose[1], object_pose[2]]
+
+        pose_est_ned, spline, _ = self.estimator.update(obj_xy_ned, t, self.const_dt) 
+
+        if pose_est_ned is None:
+            return None
         elif self.object_pose_buffer.shape[0] == 0:
-            self.object_pose_buffer = np.array([[object_pose[0], object_pose[1], object_pose[2]]])
+            self.object_pose_buffer = np.array([[t, pose_est_ned[0], pose_est_ned[1]]])
         elif self.object_pose_buffer.shape[0] <= self.object_pose_buffer_len:
-            self.object_pose_buffer = np.vstack([self.object_pose_buffer, np.array([object_pose[0], object_pose[1], object_pose[2]])])
+            self.object_pose_buffer = np.vstack([self.object_pose_buffer, np.array([t, pose_est_ned[0], pose_est_ned[1]])])
         else:
             self.object_pose_buffer = np.delete(self.object_pose_buffer, (0), axis=0)
-            self.object_pose_buffer = np.vstack([self.object_pose_buffer, np.array([object_pose[0], object_pose[1], object_pose[2]])])
+            self.object_pose_buffer = np.vstack([self.object_pose_buffer, np.array([t, pose_est_ned[0], pose_est_ned[1]])])
         
         if self.object_pose_buffer.shape[0] <= 1:
             return None
         
-        self.updateMap()
+        self.updateMap(pose_est_ned, spline)
         pan_scan = self.scan(imu_meas, cam_ps)
         # self.getOptimalROI(score_map, pan_scan)
 

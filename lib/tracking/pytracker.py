@@ -216,7 +216,7 @@ class PyTracker:
             else:
                 _, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])
             
-            kin.predict(states[idx,4:7], states[idx,1:4], target_pose)
+            kin.predict(states[idx,4:7], states[idx,1:4], target_pose, states[idx,0])
             sh_frame = self.visualize(current_frame, bbox, valid)
             # self.visualize_ext(tgt_est_pos, cam_pos)
 

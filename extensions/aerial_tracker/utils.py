@@ -42,10 +42,15 @@ def make_panorama_scan(map, panorama_width, sr2br, out_size: tuple=None):
         return cv.resize(panorama, out_size, interpolation=cv.INTER_LINEAR)
 
 
+# def predict_linear_probs(ts, xs, ys, dt, next_x, next_y, v_std_dev, beta_std_dev, samples_num):
 def predict_linear_probs(ts, xs, ys, dt, v_std_dev, beta_std_dev, samples_num):
     l = len(ts)
     assert (l == len(xs) == len(ys))
-    cur_t, last_t = ts[-1], ts[-2]
+    # cur_t = ts[-1]
+    # cur_x = xs[-1]
+    # cur_y = ys[-1]
+    # psi = np.arctan2(next_y-cur_y, next_x-cur_x)
+    # cur_t, last_t = ts[-1], ts[-2]
     cur_x, last_x = xs[-1], xs[-2]
     cur_y, last_y = ys[-1], ys[-2]
     psi = np.arctan2(cur_y-last_y, cur_x-last_x)
