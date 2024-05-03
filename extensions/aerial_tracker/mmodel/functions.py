@@ -25,11 +25,11 @@ def get_fitted_path(f, t, x):
 def optimal_fit(t, x):
     best_tr = 1e9
     best_path = None
-    # fs = [func_linear, func_poly2, func_poly3]
+    fs = [func_linear, func_poly2, func_poly3]
     # NOTE: for now we only extrapolate object's path based on linear model. Higher degree
     # polynomials are too sensitive facing outlier. The best case is using them when added
     # outlier removal facility before fitting
-    fs = [func_linear]
+    #fs = [func_linear]
     for f in fs:
         path, tr = get_fitted_path(f, t, x) 
         if tr < best_tr:
