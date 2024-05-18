@@ -147,7 +147,7 @@ class AerialTracker(CameraKinematics):
         
         self.updateMap(pose_est_ned, spline)
         pan_scan = self.scan(imu_meas, cam_ps)
-        # self.getOptimalROI(score_map, pan_scan)
+        # return self.getOptimalROI(score_map, pan_scan)
 
 
     def __initNormalization(self):

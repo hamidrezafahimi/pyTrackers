@@ -51,17 +51,23 @@ def predict_linear_probs(ts, xs, ys, dt, v_std_dev, beta_std_dev, samples_num):
     # cur_y = ys[-1]
     # psi = np.arctan2(next_y-cur_y, next_x-cur_x)
     # cur_t, last_t = ts[-1], ts[-2]
+    ## Get current and previous 2d pose from input buffers
     cur_x, last_x = xs[-1], xs[-2]
     cur_y, last_y = ys[-1], ys[-2]
+    ## Calculate heading based on current and prev pose
     psi = np.arctan2(cur_y-last_y, cur_x-last_x)
+    ## Calculate an average velocity from given pose buffer
     sum_v = 0
     for k in range(l):
         vx = (xs[k] - xs[k-1]) / (ts[k] - ts[k-1])
         vy = (ys[k] - ys[k-1]) / (ts[k] - ts[k-1])
         sum_v += np.sqrt(vx**2 + vy**2)
     avg_v = sum_v / l
+    ## Generate a gaussian distribution of probabilistic velocities and headings around current
+    ## heading and velocity
     vs = np.random.normal(avg_v, v_std_dev, samples_num) 
     betas = np.random.normal(0, beta_std_dev, samples_num)
+    ## Obtain and return probabilistic next points
     prob_points = []
     for k in range(samples_num):
         r = vs[k] * dt
