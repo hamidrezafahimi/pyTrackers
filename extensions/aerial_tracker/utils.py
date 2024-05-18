@@ -91,7 +91,7 @@ def NED2IMG_array(arr, minX, minY, mppr):
     l = arr.shape[0]
     pix_points = np.array([])
     for k in range(l):
-        px, py = NED2IMG_single(arr[k,0], arr[k,1], minX, minY, mppr)
+        px, py = NED2IMG_single(arr[k,1], arr[k,2], minX, minY, mppr)
         if k == 0:
             pix_points = np.array([[px, py]])
         else:

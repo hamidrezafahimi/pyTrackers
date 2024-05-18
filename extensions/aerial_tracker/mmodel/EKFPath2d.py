@@ -4,6 +4,7 @@ sys.path.append(str(Path(__file__).parent.resolve()) + "/..")
 from .modelling import ModelType1D, Modeller1D
 import numpy as np
 import time
+from .stochastic import predict_pose_probs
 
 class EKFEstimator:
     def __init__(self):
@@ -19,6 +20,11 @@ class EKFEstimator:
         self.R = np.eye(2)
         self.Q = np.array([[1], [1]])
         self.F = np.eye(2)
+        v_std_dev = 0.5  # Velocity standard deviation
+        beta_std_dev = 20 * np.pi / 180  # Beta (angle) standard deviation
+        K = 1000
+        self.gen = predict_pose_probs(None, v_std_dev, beta_std_dev, K)
+        next(self.gen)
 
     def update(self, y, t, dt):
         #print("a call to update =============== ")
@@ -29,12 +35,28 @@ class EKFEstimator:
             y = [y[0], y[1]] #TODO: Remove this after adding 3d pose estimation feature
 
         self.estimate(t, dt, y)
-        if self.model_x.ready:
-            return [self.x[0][0], self.x[1][0]], \
-                np.hstack([self.model_x.curve_points, self.model_y.curve_points]), \
-                self.model_x.curve_times
+
+        if y is None:
+            nxpt = [t+dt, self.x[0][0], self.x[1][0]]
+            data = (None, nxpt)
+        elif not self.model_x.curve_times is None and self.model_x.curve_times.shape[0] >= 2:
+            old_point = [self.model_x.curve_times[-2], self.model_x.curve_points[-2], self.model_y.curve_points[-2]]
+            new_point = [self.model_x.curve_times[-1], self.model_x.curve_points[-1], self.model_y.curve_points[-1]]
+            data = ((old_point, new_point), None)
         else:
             return None, None, None
+
+        # if self.model_x.ready:
+        #     return [self.x[0][0], self.x[1][0]], \
+        #         np.hstack([self.model_x.curve_points, self.model_y.curve_points]), \
+        #         self.model_x.curve_times
+        # else:
+        #     return None, None, None
+        prob_points = self.gen.send(data)
+        return prob_points, \
+            np.hstack([self.model_x.curve_points, self.model_y.curve_points]), \
+            self.model_x.curve_times
+
 
     def estimate(self, t, dt, measurement=None):
         if not measurement is None:
