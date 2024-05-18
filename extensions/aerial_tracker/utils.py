@@ -2,6 +2,7 @@ import cv2 as cv
 import numpy as np
 
 def calc_ground_range(alt, range):
+    # print(alt)
     assert(alt > 0 and range > 0)
     ang = np.arccos(alt/range)
     return np.tan(ang) * alt

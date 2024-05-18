@@ -6,7 +6,7 @@ from pathlib import Path
 from lib.tracking.types import Datasets
 import yaml
 from .gt import FlatGroundTargetLocator
-from .geom import all_to_ned
+from .geom import all_wrt_ref_ned
 root_path = str(Path(__file__).parent.resolve()) + "/../.."
 config_path = root_path + "/config"
 
@@ -22,7 +22,7 @@ def write_gt(gts, sts, d_path):#, write_target_gt=True):
     d_name = Path(d_path).stem
     write_target_poses_ned(d_path, d_name, sts)
     csf = open(root_path + "/results/"+d_name+"_cam_states.txt", 'w')
-    camera_poses_ned = all_to_ned(sts)
+    camera_poses_ned = all_wrt_ref_ned(sts)
     np.savetxt(csf, camera_poses_ned, delimiter=", ")
     csf.close()
     gt_dict = {}

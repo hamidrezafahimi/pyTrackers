@@ -5,7 +5,7 @@ from pathlib import Path
 root_path = str(Path(__file__).parent.resolve()) + "/../.."
 sys.path.insert(0, root_path)
 from lib.utils import make_DCM
-from lib.utils import gps_to_ned
+from lib.utils import get_ned_wrt_ref
 
 
 class CameraKinematics:
@@ -138,7 +138,7 @@ class CameraKinematics:
         
     def rect_to_pose(self, rect, imu_meas, cam_ps):
         ## convert gps lat, lon positions to a local cartesian coordinate
-        cam_pos = gps_to_ned(self.ref_loc, cam_ps)
+        cam_pos = get_ned_wrt_ref(self.ref_loc, cam_ps)
         if rect is None:
             return None, cam_pos
         ## convert target from a rect in "image coordinates" to a vector
@@ -163,7 +163,7 @@ class CameraKinematics:
         return pos1, pos2, pos3, pos4
 
     def get_cam_pos_ned(self, cam_ps):
-        return gps_to_ned(self.ref_loc, cam_ps)
+        return get_ned_wrt_ref(self.ref_loc, cam_ps)
 
     def pose_to_limited_rect(self, pose, cam_pos, imu_meas, rect_sample):
         if pose is None or pose[0] is None:

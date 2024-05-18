@@ -3,7 +3,7 @@ from pathlib import Path
 root_path = str(Path(__file__).parent.resolve()) + "/../.."
 sys.path.insert(0, root_path)
 from extensions.camera_kinematics import CameraKinematics
-from lib.utils.geom import gps_to_ned
+from lib.utils.geom import get_ned_wrt_ref
 from matplotlib import pyplot as plt
 from .utils import calc_ground_range, make_panorama_scan, predict_linear_probs, NED2IMG_array, NED2IMG_single
 import cv2 as cv
@@ -26,7 +26,7 @@ class AerialTracker(CameraKinematics):
         self._visualRange = vr
         self._wps = []
         for k in range(wps.shape[0]):
-            self._wps.append([*gps_to_ned(self.ref_loc, wps[k])])
+            self._wps.append([*get_ned_wrt_ref(self.ref_loc, wps[k])])
         #self.__mapWidth = map_width
         #self.__mapHeight = map_height
         self.__mppr = mppr

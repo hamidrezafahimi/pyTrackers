@@ -2,38 +2,39 @@ import numpy as np
 import utm
 import time
 
-def all_to_ned(data):
+def all_wrt_ref_ned(data):
     ref_loc = data[0,1:4]
     out = []
     for k in range(data.shape[0]):
-        out.append([data[k,0], *gps_to_ned(ref_loc, data[k,1:4]), *data[k,4:]])
+        cam_pos_ned = get_ned_wrt_ref(ref_loc, data[k,1:4])
+        cam_pos_ned[2] = data[k,3]
+        out.append([data[k,0], *cam_pos_ned, *data[k,4:]])
     return np.array(out)
 
-def all_to_utm(data):
-    out = data
-    for k in range(data.shape[0]):
-        out[k, 2], out[k, 1], _, _ = utm.from_latlon(data[k, 1], data[k, 2])
-    return out
+# def all_to_utm(data):
+#     out = data
+#     for k in range(data.shape[0]):
+#         out[k, 2], out[k, 1], _, _ = utm.from_latlon(data[k, 1], data[k, 2])
+#     return out
 
-def utm_to_ned(ref_loc, loc):
-    pose_ref_utm = np.array( [ref_loc[0], ref_loc[1], -ref_loc[2]] )
-    pose_utm = [loc[0],loc[1],-loc[2]]
-    pose_ned = pose_utm-pose_ref_utm
-    return np.array(pose_ned)
+# def utm_to_ned(ref_loc, loc):
+#     pose_ref_utm = np.array( [ref_loc[0], ref_loc[1], -ref_loc[2]] )
+#     pose_utm = [loc[0],loc[1],-loc[2]]
+#     pose_ned = pose_utm-pose_ref_utm
+#     return np.array(pose_ned)
 
-def latLon_to_utm(loc):
-    y, x, _, _ = utm.from_latlon(loc[0], loc[1])
-    # easting, northing, zone_number, zone_letter = utm.from_latlon(lat, lon)
-    return [x, y]
+# def latLon_to_utm(loc):
+#     y, x, _, _ = utm.from_latlon(loc[0], loc[1])
+#     # easting, northing, zone_number, zone_letter = utm.from_latlon(lat, lon)
+#     return [x, y]
 
-def gps_to_ned(ref_loc, loc):
-    y_ref, x_ref, _, _ = utm.from_latlon(ref_loc[0], ref_loc[1])
-    pose_ref_utm = np.array( [x_ref, y_ref, -ref_loc[2]] )
+def get_ned_wrt_ref(ref_loc, loc):
+    # y_ref, x_ref, _, _ = utm.from_latlon(ref_loc[0], ref_loc[1])
+    # pose_ref_utm = np.array( [x_ref, y_ref, -ref_loc[2]] )
 
-    y, x, _, _ = utm.from_latlon(loc[0], loc[1])
-    pose_utm = [x,y,-loc[2]]
-    pose_ned = pose_utm-pose_ref_utm
-
+    # y, x, _, _ = utm.from_latlon(loc[0], loc[1])
+    # pose_utm = [x,y,-loc[2]]
+    pose_ned = loc-ref_loc
     return np.array(pose_ned)
 
 def make_DCM(eul):
