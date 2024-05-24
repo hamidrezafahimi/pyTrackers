@@ -23,6 +23,7 @@ class PyTracker:
         self.trackerType = tracker_title
         self.fov = dataset_config['fov']
         self.datasetCfg = dataset_config
+        self.it_num = 0
         # self.viot = dataset_config['ext_type'] == ExtType.viot
         self.eval0 = None
         initFuncName = self.trackerType.group.name + "_init"
@@ -42,6 +43,7 @@ class PyTracker:
         self.type_visualize = getattr(self, visFuncName)
         self.ratio_thresh = self.datasetCfg['ratio_thresh']
         self.interp_factor = self.datasetCfg['interp_factor']
+        self.lastValidBBox = None
         # # self.pPath = plot_pathfig = 
         # self.ax = plt.figure().add_subplot(111)
 
@@ -161,9 +163,15 @@ class PyTracker:
         score = self.eval()
         if self.eval0 is None: 
             self.eval0 = score
-        ratio = score/self.eval0
-        valid = ratio > self.ratio_thresh
-        return valid, keeps_on, score, ratio
+        # ratio = score/self.eval0
+        # print(score, self.ratio_thresh)
+        # valid = ratio > self.ratio_thresh
+        valid = score > self.ratio_thresh
+        if valid:
+            self.lastValidBBox = bbox
+        # valid = score > 0.95
+        return valid, keeps_on, score, 0
+        # return valid, keeps_on, score, ratio
 
     def process_viot(self, frame_list, states, init_gt):
         kin = VIOT(self.interp_factor, self.frameWidth/2, self.frameHeight/2, w=self.frameWidth,
@@ -183,8 +191,7 @@ class PyTracker:
             sh_frame = self.visualize(current_frame, bbox, valid)
             ## Calling the following function leads to drawing a point being updated - only - based
             ## on motion model when the target is occluded
-            # print(est_loc)
-            self.visualize_ext(sh_frame, est_loc)
+            self.visualize_ext(sh_frame, est_loc, show=True)
             self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), sh_frame,
                      [idx, score, ratio, valid], [idx, *p])
 
@@ -200,25 +207,35 @@ class PyTracker:
                      sh_frame, [idx, score, ratio, valid], 
                      [idx, *kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])[0]])
 
-    def process_kpt(self, frame_list, states, b=None):
+    def process_kpt(self, frame_list, states, init_gt=None):
         kin = AerialTracker(wps=states[:,1:4], vr=50, mppr=0.15,
                             cx=self.frameWidth/2, cy=self.frameHeight/2, w=self.frameWidth,
                             h=self.frameHeight, hfov=self.fov)
+        est_loc = tuple(init_gt)
+        valid = True
         for idx in range(1, len(frame_list)):
             current_frame = cv2.imread(frame_list[idx])
-            bbox = self.track(current_frame, None, None)
+            # bbox = self.track(current_frame, est_loc, valid)
+            bbox = self.track(current_frame, est_loc, valid)
+            # bbox = self.track(current_frame)
             valid, _, score, ratio = self.postProc(bbox)
             tgt_pos = None
             target_pose = None
-            if valid:            
-                tgt_pos, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])
+            if valid:
+                tgt_pos, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4], 
+                                                    wrt_leg=False)
                 target_pose = [states[idx,0], tgt_pos[0], tgt_pos[1]]
             else:
                 _, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])
             
-            kin.predict(states[idx,4:7], states[idx,1:4], target_pose, states[idx,0])
+            est_loc = kin.predict(states[idx,4:7], states[idx,1:4], target_pose, 
+                                states[idx,0], states[idx+1,0]-states[idx,0])
+            if est_loc is None:
+                ## Keep the track on the side on which target was seen last time in the case in 
+                # which the subject is out of frame based on predictor
+                est_loc = self.lastValidBBox
             sh_frame = self.visualize(current_frame, bbox, valid)
-            # self.visualize_ext(tgt_est_pos, cam_pos)
+            self.visualize_ext(sh_frame, est_loc, show=True)
 
     # def process_kpt(self, frame_list, states, init_gt):
     #     kin = CameraKinematics(cx=self.frameWidth/2, cy=self.frameHeight/2, w=self.frameWidth,
@@ -296,25 +313,37 @@ class PyTracker:
         score_map = cv2.addWeighted(crop_img, 0.6, score, 0.4, 0)
         current_frame[ymin:ymax, xmin:xmax] = score_map
 
-    def visualize_viot(self, show_frame, est_loc):
-        p1 = (int(est_loc[0]+est_loc[2]/2-1), int(est_loc[1]+est_loc[3]/2-1))
+    def visualize_viot(self, show_frame, est_loc, show=False):
+        p1 = (int(est_loc[0]-est_loc[2]/2-1), int(est_loc[1]-est_loc[3]/2-1))
         p2 = (int(est_loc[0]+est_loc[2]/2+1), int(est_loc[1]+est_loc[3]/2+1))
         show_frame = cv2.rectangle(show_frame, p1, p2, (255, 0, 0),2)
+        if show:
+            cv2.imshow('demo-viot', show_frame)
+            cv2.waitKey(1)
 
-    def visualize(self, current_frame, bbox, valid):
+    def visualize(self, current_frame, bbox, valid, show=False):
         if self.verbose is False:
             return None
+        ## Draw a blue rectangle showing the current output of tracker
         x1,y1,w,h = bbox
         show_frame=cv2.rectangle(current_frame, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), (255, 0, 0),2)
+        ## Draw a red cross on the tracker output if the reported confidence is not enough
         if not valid:
             show_frame = cv2.line(show_frame, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), (0, 0, 255), 2)
             show_frame = cv2.line(show_frame, (int(x1+w), int(y1)), (int(x1), int(y1 + h)), (0, 0, 255), 2)
+        ## Draw tracker-type-dependent annotations        
         self.type_visualize(show_frame=show_frame, current_frame=current_frame, bbox=bbox)
-        cv2.imshow('demo', show_frame)
-        cv2.waitKey(1)
+        if show:
+            cv2.imshow('demo', show_frame)
+            cv2.waitKey(1)
         return show_frame
     
-    def visualize_kpt(self, frame):
-        plt.cla()
-        self.ax.plot()
-        pass
+    def visualize_kpt(self, frame, est_loc, show=False):
+        if est_loc is None:
+            return
+        self.visualize_viot(frame, est_loc)
+        if show:
+            cv2.imshow('demo-kpt', frame)
+            # cv2.imwrite('/home/hamid/ffs/img{}.jpg'.format(self.it_num), frame)
+            self.it_num += 1
+            cv2.waitKey(1)

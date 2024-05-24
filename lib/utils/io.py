@@ -107,7 +107,9 @@ def write_results(address, results):
 def get_states_data(states_dir):
     st_path = os.path.join(states_dir, 'camera_states.txt')
     st = np.loadtxt(st_path, delimiter=',').astype(np.float64)
-    return st[:,:]
+    stt = st[:,:]
+    stt[:,0] = stt[:,0] - stt[0,0]
+    return stt
 
 def get_img_list(img_dir):
     frame_list = []

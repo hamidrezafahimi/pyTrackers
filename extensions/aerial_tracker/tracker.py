@@ -21,7 +21,7 @@ from .mmodel import EKFEstimator
 
 
 class AerialTracker(CameraKinematics):
-    def __init__(self, wps, mppr, cx, cy, vr=100, f=None, w=None, h=None, hfov=None):
+    def __init__(self, wps, mppr, cx, cy, w, h, vr=100, f=None, hfov=None):
         super().__init__(copy.deepcopy(wps[0]), cx, cy, f, w, h, hfov)
         self._visualRange = vr
         self._wps = []
@@ -36,76 +36,81 @@ class AerialTracker(CameraKinematics):
         self.max_r_meter = 35
         self.__initNormalization()
         self.pan_width = 1080
-        self.show_demo = True
         # self.initGlobalMap()
         #self.v_std_dev = 0.5
         self.v_std_dev = 1 
         self.beta_std_dev = 20 * np.pi / 180
         #self.samples_num = 100
         self.samples_num = 300
+        self.lastOptimalROI = None
         # self.object_pose_buffer = np.array([])
         # self.object_pose_buffer_len = 30
         self.const_dt = 0.2
         self.object_points_pix = []
         self.estimator = EKFEstimator()
         self.map = None
-        self.extraVis = False
-
+        self.extraVis = True
+        self.show_demo = True
+        self.doPanScan = True
+        ## Homographic transform - Simulation of image capturing from probabilistic map
+        self._imageCorners = np.array([[0, 0],[w-1, 0],[w-1, h-1],[0, h-1]])
+        self._pixelMapSize = (w, h)
 
     def scan(self, imu_meas, cam_ps):
         if self.map is None:
-            return
+            return None, None
         pos1, pos2, pos3, pos4 = self.get_camera_fov_area(imu_meas, cam_ps)
         pnt1 = NED2IMG_single(pos1[0], pos1[1], self.__minX, self.__minY, self.__mppr)
         pnt2 = NED2IMG_single(pos2[0], pos2[1], self.__minX, self.__minY, self.__mppr)
         pnt3 = NED2IMG_single(pos3[0], pos3[1], self.__minX, self.__minY, self.__mppr)
         pnt4 = NED2IMG_single(pos4[0], pos4[1], self.__minX, self.__minY, self.__mppr)
-        # if self.extraVis:
-        cv.circle(self.map, pnt1, 2, (255, 255, 255), 2)
-        cv.circle(self.map, pnt2, 2, (255, 255, 255), 2)
-        cv.circle(self.map, pnt3, 2, (255, 255, 255), 2)
-        cv.circle(self.map, pnt4, 2, (255, 255, 255), 2)
-
-        cam_ned_loc = self.get_cam_pos_ned(cam_ps)
-        cam_pix_loc = NED2IMG_single(cam_ned_loc[0], cam_ned_loc[1], self.__minX, self.__minY, self.__mppr)
+        in_map_corners_pix = np.array([[pnt1[0], pnt1[1]], [pnt2[0], pnt2[1]], [pnt3[0], pnt3[1]], [pnt4[0], pnt4[1]]])
         if self.extraVis:
-            cv.circle(self.map, cam_pix_loc, 2, (255, 255, 255), 2)
-            cv.circle(self.map, cam_pix_loc, self.min_r_pix, (255, 255, 255), 1)
-            cv.circle(self.map, cam_pix_loc, self.max_r_pix, (255, 255, 255), 1)
-        
-        map_shape = self.map.shape
-        min_local_y_pix = max(cam_pix_loc[1] - self.max_r_pix, 0)
-        min_local_x_pix = max(cam_pix_loc[0] - self.max_r_pix, 0)
-        max_local_y_pix = min(cam_pix_loc[1] + self.max_r_pix, map_shape[0])
-        max_local_x_pix = min(cam_pix_loc[0] + self.max_r_pix, map_shape[1])
-        local_map = self.map[min_local_y_pix:max_local_y_pix, min_local_x_pix:max_local_x_pix]
-        pan_scan = make_panorama_scan(local_map, self.pan_width, self.min_r_pix/self.max_r_pix, (600, 200))
-        if self.show_demo:
-            # cv.imshow("global map", self.map)
-            temp = cv.resize(local_map, (900, 900), interpolation=cv.INTER_LINEAR)
-            cv.imshow("local map", temp)
-            #cv.imshow("local map", local_map)
-            cv.imshow("pan scan", pan_scan)
-        return pan_scan
-    
+            cv.circle(self.mapVis, pnt1, 2, (255, 255, 255), 2)
+            cv.circle(self.mapVis, pnt2, 2, (255, 255, 255), 2)
+            cv.circle(self.mapVis, pnt3, 2, (255, 255, 255), 2)
+            cv.circle(self.mapVis, pnt4, 2, (255, 255, 255), 2)
 
+        if self.doPanScan:
+            cam_ned_loc = self.get_cam_pos_ned(cam_ps)
+            cam_pix_loc = NED2IMG_single(cam_ned_loc[0], cam_ned_loc[1], self.__minX, self.__minY, self.__mppr)
+            if self.extraVis:
+                cv.circle(self.mapVis, cam_pix_loc, 2, (255, 255, 255), 2)
+                cv.circle(self.mapVis, cam_pix_loc, self.min_r_pix, (255, 255, 255), 1)
+                cv.circle(self.mapVis, cam_pix_loc, self.max_r_pix, (255, 255, 255), 1)
+            
+            map_shape = self.map.shape
+            min_local_y_pix = max(cam_pix_loc[1] - self.max_r_pix, 0)
+            min_local_x_pix = max(cam_pix_loc[0] - self.max_r_pix, 0)
+            max_local_y_pix = min(cam_pix_loc[1] + self.max_r_pix, map_shape[0])
+            max_local_x_pix = min(cam_pix_loc[0] + self.max_r_pix, map_shape[1])
+            local_map = self.map[min_local_y_pix:max_local_y_pix, min_local_x_pix:max_local_x_pix]
+            pan_scan = make_panorama_scan(local_map, self.pan_width, self.min_r_pix/self.max_r_pix, (600, 200))
+            if self.show_demo:
+                if self.extraVis:
+                    cv.imshow("global map", self.mapVis)
+                else:
+                    cv.imshow("global map", self.map)
+                # temp = cv.resize(local_map, (900, 900), interpolation=cv.INTER_LINEAR)
+                # cv.imshow("local map", temp)
+                #cv.imshow("local map", local_map)
+                cv.imshow("pan scan", pan_scan)
+            return pan_scan, in_map_corners_pix
+        else:
+            return None, in_map_corners_pix
+
+    
     # def updateMap(self, est_pos_ned, fitted_spline=None):
     def updateMap(self, prob_points_ned, fitted_spline=None):
         # TODO: Only render the area which is to be cropped
-        newMap = np.zeros((self.__mapHeight_pix, self.__mapWidth_pix, 1), np.uint8)
-
+        self.map = np.zeros((self.__mapHeight_pix, self.__mapWidth_pix, 1), np.uint8)
+        if self.extraVis:
+            self.mapVis = self.map.copy()
+        
         if prob_points_ned is None:
             return
 
-        ## visualize the polynomial which the estimator has fitted to target's path
-        if self.extraVis:
-            if not fitted_spline is None:
-                for k in range(1, fitted_spline.shape[0]):
-                    pt1 = NED2IMG_single(fitted_spline[k-1, 0], fitted_spline[k-1, 1], self.__minX, self.__minY, self.__mppr)
-                    pt2 = NED2IMG_single(fitted_spline[k, 0], fitted_spline[k, 1], self.__minX, self.__minY, self.__mppr)
-                    cv.line(newMap, (pt1[0], pt1[1]), (pt2[0], pt2[1]), 200, thickness=1)
 
-        self.map = newMap.copy()
         # ts = self.object_pose_buffer[:,0]
         # xs = self.object_pose_buffer[:,1]
         # ys = self.object_pose_buffer[:,2]
@@ -122,12 +127,31 @@ class AerialTracker(CameraKinematics):
         # print (prob_points_pix)
         # print ('---------------')
         l = prob_points_ned.shape[0]
-        for k in range(l):
-            j, i = prob_points_pix[k, 0], prob_points_pix[k, 1] 
-            if newMap[i,j] < 255:
-                newMap[i, j] += 1
-        # newMap = cv.GaussianBlur(newMap,(11,11),0)
-        newMap = cv.equalizeHist(newMap)
+        if self.extraVis:
+            for k in range(l):
+                j, i = prob_points_pix[k, 0], prob_points_pix[k, 1] 
+                if self.map[i,j] < 255:
+                    self.map[i, j] += 1
+                    self.mapVis[i, j] += 1
+        else:
+            for k in range(l):
+                j, i = prob_points_pix[k, 0], prob_points_pix[k, 1] 
+                if self.map[i,j] < 255:
+                    self.map[i, j] += 1
+                    
+        self.map = cv.GaussianBlur(self.map,(11,11),0)
+        self.map = cv.equalizeHist(self.map)
+        if self.extraVis:
+            self.mapVis = cv.GaussianBlur(self.map,(11,11),0)
+            self.mapVis = cv.equalizeHist(self.map)
+
+        ## visualize the polynomial which the estimator has fitted to target's path
+        if self.extraVis:
+            if not fitted_spline is None:
+                for k in range(1, fitted_spline.shape[0]):
+                    pt1 = NED2IMG_single(fitted_spline[k-1, 0], fitted_spline[k-1, 1], self.__minX, self.__minY, self.__mppr)
+                    pt2 = NED2IMG_single(fitted_spline[k, 0], fitted_spline[k, 1], self.__minX, self.__minY, self.__mppr)
+                    cv.line(self.mapVis, (pt1[0], pt1[1]), (pt2[0], pt2[1]), 200, thickness=1)
 
         ## visualize prior positions of the target 
         # for pt in self.object_points_pix:
@@ -135,10 +159,9 @@ class AerialTracker(CameraKinematics):
         #if not est_pos_ned is None:
         #    pt_next = NED2IMG_single(est_pos_ned[0], est_pos_ned[1], self.__minX, self.__minY, self.__mppr)
         #    cv.circle(newMap, (pt_next[0], pt_next[1]), 2, 255, 2)
-        self.map = newMap
 
 
-    def predict(self, imu_meas, cam_ps, object_pose, t, score_map=None):
+    def predict(self, imu_meas, cam_ps, object_pose, t, _dt, score_map=None):
         # buffer last object poses
         if object_pose is None:
             obj_xy_ned = None
@@ -148,24 +171,39 @@ class AerialTracker(CameraKinematics):
             obj_xy_ned = [object_pose[1], object_pose[2]]
 
         # pose_est_ned, spline, _ = self.estimator.update(obj_xy_ned, t, self.const_dt) 
-        prob_points, spline, _ = self.estimator.update(obj_xy_ned, t, self.const_dt) 
+        prob_points, spline, _ = self.estimator.update(obj_xy_ned, t, _dt) 
 
-        # if pose_est_ned is None:
-        #     return None
-        # elif self.object_pose_buffer.shape[0] == 0:
-        #     self.object_pose_buffer = np.array([[t, pose_est_ned[0], pose_est_ned[1]]])
-        # elif self.object_pose_buffer.shape[0] <= self.object_pose_buffer_len:
-        #     self.object_pose_buffer = np.vstack([self.object_pose_buffer, np.array([t, pose_est_ned[0], pose_est_ned[1]])])
-        # else:
-        #     self.object_pose_buffer = np.delete(self.object_pose_buffer, (0), axis=0)
-        #     self.object_pose_buffer = np.vstack([self.object_pose_buffer, np.array([t, pose_est_ned[0], pose_est_ned[1]])])
-        
-        # if self.object_pose_buffer.shape[0] <= 1:
-        #     return None
-        
         self.updateMap(prob_points, spline)
-        pan_scan = self.scan(imu_meas, cam_ps)
+        pan_scan, cornersInMap = self.scan(imu_meas, cam_ps)
+        picture = self.takePicture(cornersInMap)
+        return self.getOptimalROI(picture)
         # return self.getOptimalROI(score_map, pan_scan)
+
+    def takePicture(self, cornersInMap):
+        if self.map is None:
+            return None
+        homographicTransform, _ = cv.findHomography(cornersInMap, self._imageCorners)
+        pic = cv.warpPerspective(self.map, homographicTransform, self._pixelMapSize)
+        if self.show_demo:
+            cv.imshow("picture", pic)
+        return pic
+    
+    # def getOptimalROI(self, score_map, pan_scan): # supposed to be the complete version
+    # def getOptimalROI(self, score_map, picture): # advanced version
+    def getOptimalROI(self, picture): # primary version
+        ret,thresh = cv.threshold(picture, 10, 255, 0)
+        contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+        if len(contours) != 0:
+            # find the biggest countour (c) by the area
+            c = max(contours, key = cv.contourArea)
+            x,y,w,h = cv.boundingRect(c)
+            # self.lastOptimalROI = (x,y,w,h)
+            return (x,y,w,h)
+        else:
+            return None
+        # elif self.lastOptimalROI is None:
+        #     raise Exception("No contour while even the fist optimal ROI is not set")
+        # return self.lastOptimalROI
 
 
     def __initNormalization(self):

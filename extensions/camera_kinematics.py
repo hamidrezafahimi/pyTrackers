@@ -41,11 +41,11 @@ class CameraKinematics:
         return np.matmul(DCM_bi, in_vec)
 
 
-    def cam_to_body(self, rect):
+    def cam_to_body(self, rect, wrt_leg=False):
         if rect is None:
             return None
         ## converting 2d rectangle to a 3d vector in camera coordinates
-        vec = self.to_direction_vector(rect, self._cx, self._cy, self._f)
+        vec = self.to_direction_vector(rect, self._cx, self._cy, self._f, wrt_leg)
         ## for MAVIC Mini camera, the body axis can be converted to camera
         ## axis by a 90 deg yaw and a 90 deg roll consecutively. then we transpose
         ## it to get camera to body
@@ -58,9 +58,13 @@ class CameraKinematics:
         DCM_cb = make_DCM([90*np.pi/180, 0, 90*np.pi/180])
         return np.matmul(DCM_cb, vec)
 
-    def to_direction_vector(self, rect, cx, cy, f):
+    def to_direction_vector(self, rect, cx, cy, f, wrt_leg=False):
         ## find center point of target
-        center = np.array([rect[0]+rect[2]/2, rect[1]+rect[3]/2])
+        if wrt_leg:
+            ## In this case, the direction vector is calculated wrt middle of bottom side of rect
+            center = np.array([rect[0]+rect[2]/2, rect[1]+rect[3]])
+        else:
+            center = np.array([rect[0]+rect[2]/2, rect[1]+rect[3]/2])
         ## project 2d point from image plane to 3d space using a simple pinhole
         ## camera model
         w = np.array( [ (center[0] - cx) , (center[1] - cy), f] )
@@ -136,14 +140,14 @@ class CameraKinematics:
         return (top_left_inertia_dir,top_right_inertia_dir,\
                 bottom_left_inertia_dir,bottom_right_inertia_dir)
         
-    def rect_to_pose(self, rect, imu_meas, cam_ps):
+    def rect_to_pose(self, rect, imu_meas, cam_ps, wrt_leg=False):
         ## convert gps lat, lon positions to a local cartesian coordinate
         cam_pos = get_ned_wrt_ref(self.ref_loc, cam_ps)
         if rect is None:
             return None, cam_pos
         ## convert target from a rect in "image coordinates" to a vector
         ## in "camera body coordinates"
-        body_dir = self.cam_to_body(rect)
+        body_dir = self.cam_to_body(rect, wrt_leg)
         ## convert target from a vector in "camera body coordinates" to a vector
         ## in "inertial coordinates"
         inertia_dir = self.body_to_inertia(body_dir, imu_meas)
@@ -158,8 +162,8 @@ class CameraKinematics:
         cam_pos = self.get_cam_pos_ned(cam_ps)
         pos1 = self.scale_vector(top_left_inertia_dir, cam_ps[2]) + cam_pos
         pos2 = self.scale_vector(top_right_inertia_dir, cam_ps[2]) + cam_pos
-        pos3 = self.scale_vector(bottom_left_inertia_dir, cam_ps[2]) + cam_pos
-        pos4 = self.scale_vector(bottom_right_inertia_dir, cam_ps[2]) + cam_pos
+        pos3 = self.scale_vector(bottom_right_inertia_dir, cam_ps[2]) + cam_pos
+        pos4 = self.scale_vector(bottom_left_inertia_dir, cam_ps[2]) + cam_pos
         return pos1, pos2, pos3, pos4
 
     def get_cam_pos_ned(self, cam_ps):

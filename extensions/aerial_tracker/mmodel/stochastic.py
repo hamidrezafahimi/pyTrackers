@@ -54,10 +54,12 @@ def predict_linear_probs_1step(olpt, nwpt, nxpt, v_std_dev, beta_std_dev, K):
         t = dt + nwpt[0] 
         prb_points.append([t, x, y])
 
-    if (K == 1):
-        return prb_points
-    else:
-        return np.array(prb_points)
+    # print("--------------------")
+    # if (K == 1):
+    #     return prb_points
+    # else:
+    #     print(prb_points)
+    return np.array(prb_points)
 
 
 def predict_pose_probs(parsed_data, v_std_dev=None, beta_std_dev=None, K=None):

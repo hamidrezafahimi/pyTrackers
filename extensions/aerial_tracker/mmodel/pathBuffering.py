@@ -3,7 +3,7 @@ from .poseBuffering import Pose1DBuffer
 import numpy as np
 
 class PathBufferer1D:
-    def __init__(self, record_buf_len=200, estimate_buf_len=50):
+    def __init__(self, record_buf_len=200, estimate_buf_len=10):
         ## estimateBuffer is a constant frequency linear interpolation beginning from the end of
         # recordBuffer backwards, with maximum time-step of maxTimeStep
         self.recordBuffer = Pose1DBuffer(record_buf_len)

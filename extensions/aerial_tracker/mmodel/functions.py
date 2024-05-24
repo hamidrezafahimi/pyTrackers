@@ -13,6 +13,9 @@ def func_poly2(x, a, b, c):
 def func_poly3(x, a, b, c, d):
     return a*(x**3) + b*(x**2) + c*x + d
 
+def func_poly4(x, a, b, c, d, e):
+    return a*(x**4) + b*(x**3) + c*(x**2) + d*x + e
+
 def concat_cols(x, y):
     return np.hstack([x.reshape(x.shape[0], 1), y.reshape(y.shape[0], 1)])
 
@@ -21,22 +24,6 @@ def get_fitted_path(f, t, x):
     tr_x = np.trace(pcov_x)/pcov_x.shape[0] 
     fitted_x = f(t, *popt_x)
     return fitted_x, tr_x
-
-def optimal_fit(t, x):
-    best_tr = 1e9
-    best_path = None
-    fs = [func_linear, func_poly2, func_poly3]
-    # NOTE: for now we only extrapolate object's path based on linear model. Higher degree
-    # polynomials are too sensitive facing outlier. The best case is using them when added
-    # outlier removal facility before fitting
-    #fs = [func_linear]
-    for f in fs:
-        path, tr = get_fitted_path(f, t, x) 
-        if tr < best_tr:
-            best_tr = tr
-            best_path = copy.deepcopy(path)
-    return best_path
-
 
 # def cubic_spline_bcNotAknot(ts, points, new_times=None, t=None):
 #     return np.vstack((cubic_spline_notAknot_1d(ts, points[:,0], new_times, t),

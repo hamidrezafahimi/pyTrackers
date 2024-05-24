@@ -7,9 +7,10 @@ from lib.tracking.run import run_once
 
 dataset_type = Datasets.VIOT
 ext_type = ExtType.kpt
+# ext_type = ExtType.viot
 # ext_type = ExtType.raw
 data_name = "park_mavic_1"
-start_frame = 180
+start_frame = 280
 end_frame = 1000
 tracker_type = Trackers.MIXFORMER
 # tracker_type = Trackers.DIMP

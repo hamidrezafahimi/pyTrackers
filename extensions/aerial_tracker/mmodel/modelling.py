@@ -3,13 +3,13 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.resolve()) + "/..")
 from .pathBuffering import PathBufferer1D
-from .functions import optimal_fit
+from .functions import *
 #from .utils import cubic_spline_natural_1d, linear_avg_velocity_1d
 import numpy as np
 
 class ModelType1D(Enum):
     LINEAR_EXTRAP = 1
-    LINEAR_FIT = 2
+    LINEAR_OPTIMAL_FIT = 2
     CUBIC_SPLINE = 3
 
 class Modeller1D:
@@ -22,13 +22,33 @@ class Modeller1D:
             # average-velocity-based method
             self.model = self.linear_avg_velocity_1d
             # self.model = self.linear_curve_fit
-        elif type == ModelType1D.LINEAR_FIT:
+        elif type == ModelType1D.LINEAR_OPTIMAL_FIT:
             self.model = self.linear_curve_fit
         else:
             raise Exception("Unsupported model type")
         self.ready = False
         self.curve_points = None
         self.curve_times = None
+        self.lastOptimalFitFunc = None
+
+    def optimal_fit(self, t, x):
+        best_tr = 1e9
+        best_path = None
+        # fs = [func_linear, func_poly2, func_poly3, func_poly4]
+        # fs = [func_linear, func_poly2, func_poly3]
+        fs = [func_linear, func_poly2]
+        switch = False
+        bestF = None
+        for f in fs:
+            path, tr = get_fitted_path(f, t, x) 
+            if tr < best_tr:
+                best_tr = tr
+                best_path = copy.deepcopy(path)
+                bestF = f
+        if self.lastOptimalFitFunc is None or bestF != self.lastOptimalFitFunc:
+            self.lastOptimalFitFunc = bestF
+            switch = True
+        return best_path, switch
 
     def rememebr(self, pose: list):
         self.buffer.storeData(pose)
@@ -57,13 +77,13 @@ class Modeller1D:
         else:
             new_times_ = np.array([t-t0 for t in new_times])
 
-        fitted_path = optimal_fit(ts_, _pos_buff)
+        fitted_path, switched = self.optimal_fit(ts_, _pos_buff)
         self.curve_points = fitted_path.reshape(fitted_path.shape[0], 1)
         #print("inputs: ------------ ")
         #print(ts_)
         #print(_pos_buff)
         #print(new_times_)
-        return self.linear(ts_, fitted_path, new_times_, t_)
+        return self.linear(ts_, fitted_path, new_times_, t_), switched
     
     def linear(self, ts, _pos_buff, new_times=None, t=None):#,_interp_factor=1):
         ## calculate velocities for each consecutive pair of buffered target positions (used to 

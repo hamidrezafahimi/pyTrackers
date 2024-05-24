@@ -25,7 +25,7 @@ ratio_thresh:
   DIMP_prdimp50: 0.3
   KYS_default: 0.2
   TOMP_tomp101: 0.5
-  MIXFORMER_vit: 0.995
+  MIXFORMER_vit: 0.98
   ECO_default: 0.5
 
 interp_factor:
