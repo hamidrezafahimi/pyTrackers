@@ -49,8 +49,8 @@ class AerialTracker(CameraKinematics):
         self.object_points_pix = []
         self.estimator = EKFEstimator()
         self.map = None
-        self.extraVis = True
-        self.show_demo = True
+        self.extraVis = False
+        self.show_demo = False
         self.doPanScan = True
         ## Homographic transform - Simulation of image capturing from probabilistic map
         self._imageCorners = np.array([[0, 0],[w-1, 0],[w-1, h-1],[0, h-1]])
@@ -85,7 +85,7 @@ class AerialTracker(CameraKinematics):
             max_local_y_pix = min(cam_pix_loc[1] + self.max_r_pix, map_shape[0])
             max_local_x_pix = min(cam_pix_loc[0] + self.max_r_pix, map_shape[1])
             local_map = self.map[min_local_y_pix:max_local_y_pix, min_local_x_pix:max_local_x_pix]
-            pan_scan = make_panorama_scan(local_map, self.pan_width, self.min_r_pix/self.max_r_pix, (600, 200))
+            # pan_scan = make_panorama_scan(local_map, self.pan_width, self.min_r_pix/self.max_r_pix, (600, 200))
             if self.show_demo:
                 if self.extraVis:
                     cv.imshow("global map", self.mapVis)
@@ -94,8 +94,9 @@ class AerialTracker(CameraKinematics):
                 # temp = cv.resize(local_map, (900, 900), interpolation=cv.INTER_LINEAR)
                 # cv.imshow("local map", temp)
                 #cv.imshow("local map", local_map)
-                cv.imshow("pan scan", pan_scan)
-            return pan_scan, in_map_corners_pix
+                # cv.imshow("pan scan", pan_scan)
+            # return pan_scan, in_map_corners_pix
+            return None, in_map_corners_pix
         else:
             return None, in_map_corners_pix
 

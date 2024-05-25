@@ -163,10 +163,10 @@ class PyTracker:
         score = self.eval()
         if self.eval0 is None: 
             self.eval0 = score
-        # ratio = score/self.eval0
-        # print(score, self.ratio_thresh)
-        # valid = ratio > self.ratio_thresh
-        valid = score > self.ratio_thresh
+        ratio = score/self.eval0
+        valid = ratio > self.ratio_thresh
+        print(ratio, score, self.ratio_thresh, self.eval0)
+        # valid = score > self.ratio_thresh
         if valid:
             self.lastValidBBox = bbox
         # valid = score > 0.95
@@ -228,14 +228,20 @@ class PyTracker:
             else:
                 _, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])
             
-            est_loc = kin.predict(states[idx,4:7], states[idx,1:4], target_pose, 
-                                states[idx,0], states[idx+1,0]-states[idx,0])
+            print(states.shape[0], idx)
+            if idx+1 < states.shape[0]:
+                est_loc = kin.predict(states[idx,4:7], states[idx,1:4], target_pose, 
+                                    states[idx,0], states[idx+1,0]-states[idx,0])
+            else:
+                est_loc = None
             if est_loc is None:
                 ## Keep the track on the side on which target was seen last time in the case in 
                 # which the subject is out of frame based on predictor
                 est_loc = self.lastValidBBox
             sh_frame = self.visualize(current_frame, bbox, valid)
             self.visualize_ext(sh_frame, est_loc, show=True)
+            self.log(np.array([int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]), sh_frame,
+                     [idx, score, ratio, valid])
 
     # def process_kpt(self, frame_list, states, init_gt):
     #     kin = CameraKinematics(cx=self.frameWidth/2, cy=self.frameHeight/2, w=self.frameWidth,
@@ -316,7 +322,7 @@ class PyTracker:
     def visualize_viot(self, show_frame, est_loc, show=False):
         p1 = (int(est_loc[0]-est_loc[2]/2-1), int(est_loc[1]-est_loc[3]/2-1))
         p2 = (int(est_loc[0]+est_loc[2]/2+1), int(est_loc[1]+est_loc[3]/2+1))
-        show_frame = cv2.rectangle(show_frame, p1, p2, (255, 0, 0),2)
+        show_frame = cv2.rectangle(show_frame, p1, p2, (255, 255, 0),2)
         if show:
             cv2.imshow('demo-viot', show_frame)
             cv2.waitKey(1)

@@ -80,7 +80,7 @@ class EKFEstimator:
         if self.model_x.ready:
             x_preds, switched_x = self.model_x.predict([t, t+dt])
             y_preds, switched_y = self.model_y.predict([t, t+dt])
-            if (switched_y or switched_x):
+            if switched_y or switched_x or (self.P[0,0] + self.P[1,1]) > 1e60:
                 print("switched model ----- resetting covariance matrix")
                 self.P = np.eye(2)
             # Time update

@@ -9,6 +9,8 @@ dataset/
 trackers/MixFormer/models/
 !trackers/MixFormer/models/README.md
 results/
+results1/
+results2/
 !results/README.md
 *.pth
 *.tar

@@ -37,6 +37,7 @@ class Modeller1D:
         # fs = [func_linear, func_poly2, func_poly3, func_poly4]
         # fs = [func_linear, func_poly2, func_poly3]
         fs = [func_linear, func_poly2]
+        # fs = [func_linear]
         switch = False
         bestF = None
         for f in fs:
@@ -49,6 +50,7 @@ class Modeller1D:
             self.lastOptimalFitFunc = bestF
             switch = True
         return best_path, switch
+        # return best_path, True
 
     def rememebr(self, pose: list):
         self.buffer.storeData(pose)
