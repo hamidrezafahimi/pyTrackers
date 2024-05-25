@@ -40,6 +40,9 @@ pip install torch==1.13.1 torchvision
 pip install matplotlib
 pip install utm
 pip install visdom
+export LD_LIBRARY_PATH=/usr/local/cuda-11.7/lib64:$LD_LIBRARY_PATH
+export PATH=/usr/local/cuda-11.7/bin:$PATH
+export TORCH_CUDA_ARCH_LIST="3.5;5.0;6.0;6.1;7.0;7.5;8.0;8.6+PTX"
 pip install spatial-correlation-sampler
 sudo apt-get install ninja-build
 pip install jpeg4py
