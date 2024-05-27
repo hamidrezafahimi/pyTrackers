@@ -49,12 +49,13 @@ class AerialTracker(CameraKinematics):
         self.object_points_pix = []
         self.estimator = EKFEstimator()
         self.map = None
-        self.extraVis = False
-        self.show_demo = False
+        self.extraVis = True
+        self.show_demo = True
         self.doPanScan = True
         ## Homographic transform - Simulation of image capturing from probabilistic map
         self._imageCorners = np.array([[0, 0],[w-1, 0],[w-1, h-1],[0, h-1]])
         self._pixelMapSize = (w, h)
+        self.iter = 0
 
     def scan(self, imu_meas, cam_ps):
         if self.map is None:
@@ -140,7 +141,7 @@ class AerialTracker(CameraKinematics):
                 if self.map[i,j] < 255:
                     self.map[i, j] += 1
                     
-        self.map = cv.GaussianBlur(self.map,(11,11),0)
+        # self.map = cv.GaussianBlur(self.map,(11,11),0)
         self.map = cv.equalizeHist(self.map)
         if self.extraVis:
             self.mapVis = cv.GaussianBlur(self.map,(11,11),0)
@@ -199,9 +200,15 @@ class AerialTracker(CameraKinematics):
             c = max(contours, key = cv.contourArea)
             x,y,w,h = cv.boundingRect(c)
             # self.lastOptimalROI = (x,y,w,h)
-            return (x,y,w,h)
+            ret = (x,y,w,h)
+            cv.rectangle(thresh, (x,y), (x+w, y+h), 125, 2)
         else:
-            return None
+            ret = None
+
+        # cv.imwrite('/home/hamid/ffs/img{}.jpg'.format(self.iter), thresh)
+        # cv.imwrite('/home/hamid/ffs/ig{}.jpg'.format(self.iter), picture)
+        self.iter += 1
+        return ret
         # elif self.lastOptimalROI is None:
         #     raise Exception("No contour while even the fist optimal ROI is not set")
         # return self.lastOptimalROI

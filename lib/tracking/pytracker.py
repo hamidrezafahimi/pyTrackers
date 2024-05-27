@@ -44,6 +44,7 @@ class PyTracker:
         self.ratio_thresh = self.datasetCfg['ratio_thresh']
         self.interp_factor = self.datasetCfg['interp_factor']
         self.lastValidBBox = None
+        self.wrt_leg = False
         # # self.pPath = plot_pathfig = 
         # self.ax = plt.figure().add_subplot(111)
 
@@ -165,7 +166,7 @@ class PyTracker:
             self.eval0 = score
         ratio = score/self.eval0
         valid = ratio > self.ratio_thresh
-        print(ratio, score, self.ratio_thresh, self.eval0)
+        # print(ratio, score, self.ratio_thresh, self.eval0)
         # valid = score > self.ratio_thresh
         if valid:
             self.lastValidBBox = bbox
@@ -223,12 +224,12 @@ class PyTracker:
             target_pose = None
             if valid:
                 tgt_pos, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4], 
-                                                    wrt_leg=False)
+                                                    self.wrt_leg)
                 target_pose = [states[idx,0], tgt_pos[0], tgt_pos[1]]
             else:
                 _, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])
             
-            print(states.shape[0], idx)
+            # print(states.shape[0], idx)
             if idx+1 < states.shape[0]:
                 est_loc = kin.predict(states[idx,4:7], states[idx,1:4], target_pose, 
                                     states[idx,0], states[idx+1,0]-states[idx,0])
@@ -347,9 +348,11 @@ class PyTracker:
     def visualize_kpt(self, frame, est_loc, show=False):
         if est_loc is None:
             return
-        self.visualize_viot(frame, est_loc)
+        p1 = (est_loc[0], est_loc[1])
+        p2 = (est_loc[0]+est_loc[2], est_loc[1]+est_loc[3])
+        frame = cv2.rectangle(frame, p1, p2, (255, 255, 0),2)
         if show:
             cv2.imshow('demo-kpt', frame)
-            # cv2.imwrite('/home/hamid/ffs/img{}.jpg'.format(self.it_num), frame)
+            # cv2.imwrite('/home/hamid/ffs/i{}.jpg'.format(self.it_num), frame)
             self.it_num += 1
             cv2.waitKey(1)
