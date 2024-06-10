@@ -22,9 +22,9 @@ ratio_thresh:
   STRCF_default: 0.2
   CSRDCF_default: 0.2
   DIMP_dimp50: 0.5
-  DIMP_prdimp50: 0.3
+  DIMP_prdimp50: 0.6
   KYS_default: 0.2
-  TOMP_tomp101: 0.9
+  TOMP_tomp101: 0.95
   MIXFORMER_vit: 0.98
   ECO_default: 0.5
 

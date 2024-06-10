@@ -49,13 +49,14 @@ class AerialTracker(CameraKinematics):
         self.object_points_pix = []
         self.estimator = EKFEstimator()
         self.map = None
-        self.extraVis = True
-        self.show_demo = True
+        self.extraVis = False
+        self.show_demo = False
         self.doPanScan = True
         ## Homographic transform - Simulation of image capturing from probabilistic map
         self._imageCorners = np.array([[0, 0],[w-1, 0],[w-1, h-1],[0, h-1]])
         self._pixelMapSize = (w, h)
         self.iter = 0
+        self.picturing_thresh = 80
 
     def scan(self, imu_meas, cam_ps):
         if self.map is None:
@@ -193,7 +194,7 @@ class AerialTracker(CameraKinematics):
     # def getOptimalROI(self, score_map, pan_scan): # supposed to be the complete version
     # def getOptimalROI(self, score_map, picture): # advanced version
     def getOptimalROI(self, picture): # primary version
-        ret,thresh = cv.threshold(picture, 10, 255, 0)
+        ret,thresh = cv.threshold(picture, self.picturing_thresh, 255, 0)
         contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
         if len(contours) != 0:
             # find the biggest countour (c) by the area
@@ -206,7 +207,9 @@ class AerialTracker(CameraKinematics):
             ret = None
 
         # cv.imwrite('/home/hamid/ffs/img{}.jpg'.format(self.iter), thresh)
+        cv.imshow('thresh', thresh)
         # cv.imwrite('/home/hamid/ffs/ig{}.jpg'.format(self.iter), picture)
+        cv.imshow('picture', picture)
         self.iter += 1
         return ret
         # elif self.lastOptimalROI is None:

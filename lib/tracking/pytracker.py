@@ -217,7 +217,10 @@ class PyTracker:
         for idx in range(1, len(frame_list)):
             current_frame = cv2.imread(frame_list[idx])
             # bbox = self.track(current_frame, est_loc, valid)
-            bbox = self.track(current_frame, est_loc, valid)
+            if idx > 40:
+                bbox = self.track(current_frame, est_loc, valid)
+            else:
+                bbox = self.track(current_frame, None, None)
             # bbox = self.track(current_frame)
             valid, _, score, ratio = self.postProc(bbox)
             tgt_pos = None

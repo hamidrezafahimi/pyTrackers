@@ -20,9 +20,9 @@ class EKFEstimator:
         self.R = np.eye(2)
         self.Q = np.array([[1], [1]])
         self.F = np.eye(2)
-        v_std_dev = 1  # Velocity standard deviation
-        beta_std_dev = 35 * np.pi / 180  # Beta (angle) standard deviation
-        K = 500
+        v_std_dev = 2  # Velocity standard deviation
+        beta_std_dev = 30 * np.pi / 180  # Beta (angle) standard deviation
+        K = 200
         self.gen = predict_pose_probs(None, v_std_dev, beta_std_dev, K)
         next(self.gen)
 
