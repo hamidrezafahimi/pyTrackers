@@ -10,7 +10,7 @@ This repository contains implementation of some major correlation filter based t
 
 ### Sample images from dataset:
 - Sample images from our VIOT-2 dataset
-<br/>
+<div>
 <img src="img/dataset11.jpg"  width="135" height="110">
 <img src="img/dataset12.jpg"  width="135" height="110">
 <img src="img/dataset13.jpg"  width="135" height="110">
@@ -38,7 +38,7 @@ This repository contains implementation of some major correlation filter based t
 <img src="img/dataset34.jpg"  width="135" height="110">
 <img src="img/dataset35.jpg"  width="135" height="110">
 <img src="img/dataset36.jpg"  width="135" height="110">
-<br/>
+</div>
 
 
 ### Sample odometry:
@@ -51,7 +51,7 @@ in the field.
 - Tracker precision comparison over Mixformer and
 KYS trackers for pure trackers, trackers enhanced with VIOT,
 and trackers enhanced with our extension
-
+<div>
 <img src="img/DiMP.png"  width="250" height="220">
 <img src="img/ToMP.png"  width="250" height="220">
 <br/>
@@ -59,6 +59,7 @@ and trackers enhanced with our extension
 <img src="img/MixFormer.png"  width="250" height="220">
 <br/>
 <img src="img/Legend.png"  width="603">
+</div>
 
 
 ## Setup
