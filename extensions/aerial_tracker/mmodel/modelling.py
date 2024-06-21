@@ -36,8 +36,8 @@ class Modeller1D:
         best_path = None
         # fs = [func_linear, func_poly2, func_poly3, func_poly4]
         # fs = [func_linear, func_poly2, func_poly3]
-        # fs = [func_linear, func_poly2]
-        fs = [func_linear]
+        fs = [func_linear, func_poly2]
+        # fs = [func_linear]
         switch = False
         bestF = None
         for f in fs:

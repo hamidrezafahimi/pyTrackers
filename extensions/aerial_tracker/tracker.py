@@ -11,7 +11,7 @@ import numpy as np
 import time
 import copy
 from .mmodel import EKFEstimator
-
+import pandas as pd
 ## NOTE:
 # The geographic directions in the map image:
 # --> N
@@ -125,6 +125,10 @@ class AerialTracker(CameraKinematics):
         # prob_points_ned = predict_linear_probs(ts, xs, ys, self.const_dt, est_pos_ned[0],
         #                                        est_pos_ned[1], self.v_std_dev, 
         #                                        self.beta_std_dev, self.samples_num)
+        for k in range(prob_points_ned.shape[0]):
+            df_marker = pd.DataFrame({'Xs':[prob_points_ned[k,1]], 'Ys':[prob_points_ned[k,2]], 'Time':[prob_points_ned[k,0]]})
+            df_marker.to_csv("/home/hamid/sparsepoints.csv", mode='a', index=False, header=False)
+            
         prob_points_pix = NED2IMG_array(prob_points_ned, self.__minX, self.__minY, self.__mppr)
         # print (prob_points_ned)
         # print (prob_points_pix)

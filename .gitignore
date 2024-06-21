@@ -11,6 +11,9 @@ trackers/MixFormer/models/
 results/
 results1/
 results2/
+results-dimp/
+results-mxf/
+results-tomp/
 !results/README.md
 *.pth
 *.tar

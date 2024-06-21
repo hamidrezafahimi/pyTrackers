@@ -44,6 +44,8 @@ class EKFEstimator:
             old_point = [self.model_x.curve_times[-2], self.model_x.curve_points[-2][0], self.model_y.curve_points[-2][0]]
             new_point = [self.model_x.curve_times[-1], self.model_x.curve_points[-1][0], self.model_y.curve_points[-1][0]]
             data = ((old_point, new_point), None)
+            # if y is None:
+            #     return None, None, None
         else:
             return None, None, None
 

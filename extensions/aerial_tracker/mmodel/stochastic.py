@@ -79,7 +79,7 @@ def predict_pose_probs(parsed_data, v_std_dev=None, beta_std_dev=None, K=None):
             if buffer is None:
                 #print ("buf is None")
                 ## No pose buffer. Extrapolate the last prob points for one step forward 
-                assert(len(next_prob_points != 0)) # An initial buffer is needed to start working:
+                assert(len(next_prob_points) != 0) # An initial buffer is needed to start working:
                 nnpp = []
                 for k in range(K):
                     nwp = new_points[k, :]
@@ -112,7 +112,7 @@ def predict_pose_probs(parsed_data, v_std_dev=None, beta_std_dev=None, K=None):
             #print("(det) next_prob_points: ", next_prob_points)
         else:
             started = True
-        parsed_data = yield  next_prob_points  
+        parsed_data = yield next_prob_points  
 
 
 ## Example usage

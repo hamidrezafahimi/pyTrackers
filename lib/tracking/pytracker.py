@@ -280,9 +280,10 @@ class PyTracker:
         print('processing {:s} with {:s} tracker done!'.format(data_name, self.trackerType.tag))
 
     def mxf_visualize(self, show_frame=None, current_frame=None, bbox=None):
-        for zone in self.tracker._sample_coords:
-            show_frame=cv2.rectangle(show_frame, (int(zone[1]), int(zone[0])),
-                                        (int(zone[3]), int(zone[2])), (0, 255, 255),1)
+        pass
+        # for zone in self.tracker._sample_coords:
+        #     show_frame=cv2.rectangle(show_frame, (int(zone[1]), int(zone[0])),
+        #                                 (int(zone[3]), int(zone[2])), (0, 255, 255),1)
 
     def eth_visualize(self, show_frame=None, current_frame=None, bbox=None):
         self.cf_visualize(show_frame=show_frame, current_frame=current_frame, bbox=bbox)
@@ -336,7 +337,8 @@ class PyTracker:
             return None
         ## Draw a blue rectangle showing the current output of tracker
         x1,y1,w,h = bbox
-        show_frame=cv2.rectangle(current_frame, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), (255, 0, 0),2)
+        show_frame = current_frame
+        # show_frame=cv2.rectangle(current_frame, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), (255, 0, 0),2)
         ## Draw a red cross on the tracker output if the reported confidence is not enough
         if not valid:
             show_frame = cv2.line(show_frame, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), (0, 0, 255), 2)
@@ -353,7 +355,7 @@ class PyTracker:
             return
         p1 = (est_loc[0], est_loc[1])
         p2 = (est_loc[0]+est_loc[2], est_loc[1]+est_loc[3])
-        frame = cv2.rectangle(frame, p1, p2, (255, 255, 0),2)
+        # frame = cv2.rectangle(frame, p1, p2, (255, 255, 0),2)
         if show:
             cv2.imshow('demo-kpt', frame)
             # cv2.imwrite('/home/hamid/ffs/i{}.jpg'.format(self.it_num), frame)
