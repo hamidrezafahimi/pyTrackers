@@ -11,33 +11,33 @@ This repository contains implementation of some major correlation filter based t
 ### Sample images from dataset:
 - Sample images from our VIOT-2 dataset
 <div>
-<img src="img/dataset11.jpg"  width="135" height="110">
-<img src="img/dataset12.jpg"  width="135" height="110">
-<img src="img/dataset13.jpg"  width="135" height="110">
-<img src="img/dataset14.jpg"  width="135" height="110">
-<img src="img/dataset15.jpg"  width="135" height="110">
-<img src="img/dataset16.jpg"  width="135" height="110">
+<img src="img/dataset11.jpg"  width="130" height="100">
+<img src="img/dataset12.jpg"  width="130" height="100">
+<img src="img/dataset13.jpg"  width="130" height="100">
+<img src="img/dataset14.jpg"  width="130" height="100">
+<img src="img/dataset15.jpg"  width="130" height="100">
+<img src="img/dataset16.jpg"  width="130" height="100">
 <br/>
-<img src="img/dataset21.jpg"  width="135" height="110">
-<img src="img/dataset22.jpg"  width="135" height="110">
-<img src="img/dataset23.jpg"  width="135" height="110">
-<img src="img/dataset24.jpg"  width="135" height="110">
-<img src="img/dataset25.jpg"  width="135" height="110">
-<img src="img/dataset26.jpg"  width="135" height="110">
+<img src="img/dataset21.jpg"  width="130" height="100">
+<img src="img/dataset22.jpg"  width="130" height="100">
+<img src="img/dataset23.jpg"  width="130" height="100">
+<img src="img/dataset24.jpg"  width="130" height="100">
+<img src="img/dataset25.jpg"  width="130" height="100">
+<img src="img/dataset26.jpg"  width="130" height="100">
 <br/>
-<img src="img/dataset31.jpg"  width="135" height="110">
-<img src="img/dataset32.jpg"  width="135" height="110">
-<img src="img/dataset33.jpg"  width="135" height="110">
-<img src="img/dataset34.jpg"  width="135" height="110">
-<img src="img/dataset35.jpg"  width="135" height="110">
-<img src="img/dataset36.jpg"  width="135" height="110">
+<img src="img/dataset31.jpg"  width="130" height="100">
+<img src="img/dataset32.jpg"  width="130" height="100">
+<img src="img/dataset33.jpg"  width="130" height="100">
+<img src="img/dataset34.jpg"  width="130" height="100">
+<img src="img/dataset35.jpg"  width="130" height="100">
+<img src="img/dataset36.jpg"  width="130" height="100">
 <br/>
-<img src="img/dataset31.jpg"  width="135" height="110">
-<img src="img/dataset32.jpg"  width="135" height="110">
-<img src="img/dataset33.jpg"  width="135" height="110">
-<img src="img/dataset34.jpg"  width="135" height="110">
-<img src="img/dataset35.jpg"  width="135" height="110">
-<img src="img/dataset36.jpg"  width="135" height="110">
+<img src="img/dataset31.jpg"  width="130" height="100">
+<img src="img/dataset32.jpg"  width="130" height="100">
+<img src="img/dataset33.jpg"  width="130" height="100">
+<img src="img/dataset34.jpg"  width="130" height="100">
+<img src="img/dataset35.jpg"  width="130" height="100">
+<img src="img/dataset36.jpg"  width="130" height="100">
 </div>
 
 
@@ -52,13 +52,12 @@ in the field.
 KYS trackers for pure trackers, trackers enhanced with VIOT,
 and trackers enhanced with our extension
 <div>
-<img src="img/DiMP.png"  width="250" height="220">
-<img src="img/ToMP.png"  width="250" height="220">
+<img src="img/DiMP.png"  width="390" height="340">
+<img src="img/ToMP.png"  width="390" height="340">
+<img src="img/KYS.png"  width="390" height="340">
+<img src="img/MixFormer.png"  width="390" height="340">
 <br/>
-<img src="img/KYS.png"  width="250" height="220">
-<img src="img/MixFormer.png"  width="250" height="220">
-<br/>
-<img src="img/Legend.png"  width="603">
+<img src="img/Legend.png"  width="390">
 </div>
 
 
