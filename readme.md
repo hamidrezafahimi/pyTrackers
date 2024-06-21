@@ -1,10 +1,10 @@
 # pyTrackers
-This repository contains implementation of some major correlation filter based trackers cloned from [pyCFTrackers](https://github.com/fengyang95/pyCFTrackers) repo and some deep learning trackers taken from [pytracking](https://github.com/fengyang95/pyCFTrackers). Modifications of their algorithms are made so that they can be benefit from camera state measurements. The algorithms are evaluated on a custom dataset named [VIOT dataset](https://drive.google.com/file/d/1cXYGRWDcvpxmc54gyAqvfLYPxaSshgV9/view?usp=sharing). 
+This repository contains implementation of some major correlation filter based trackers cloned from [pyCFTrackers](https://github.com/fengyang95/pyCFTrackers) repo and some deep learning trackers taken from [pytracking](https://github.com/fengyang95/pyCFTrackers). Modifications of their algorithms are made so that they can be benefit from camera state measurements. The algorithms are evaluated on a custom dataset named [VIOT-2 dataset](https://drive.google.com/file/d/1cXYGRWDcvpxmc54gyAqvfLYPxaSshgV9/view?usp=sharing). 
 
 
 
 ## Dataset
-- Link to our dataset [this link](https://drive.google.com/file/d/1cXYGRWDcvpxmc54gyAqvfLYPxaSshgV9/view?usp=sharing) [VIOT-2 Database]
+- [Link to VIOT-2 dataset](https://drive.google.com/file/d/1cXYGRWDcvpxmc54gyAqvfLYPxaSshgV9/view?usp=sharing)
 - This dataset was generated with [ground_truth_generation](https://github.com/hamidrezafahimi/ground_truth_generation) repository
  
 
@@ -32,12 +32,12 @@ This repository contains implementation of some major correlation filter based t
 <img src="img/dataset35.jpg"  width="130" height="100">
 <img src="img/dataset36.jpg"  width="130" height="100">
 <br/>
-<img src="img/dataset31.jpg"  width="130" height="100">
-<img src="img/dataset32.jpg"  width="130" height="100">
-<img src="img/dataset33.jpg"  width="130" height="100">
-<img src="img/dataset34.jpg"  width="130" height="100">
-<img src="img/dataset35.jpg"  width="130" height="100">
-<img src="img/dataset36.jpg"  width="130" height="100">
+<img src="img/dataset41.jpg"  width="130" height="100">
+<img src="img/dataset42.jpg"  width="130" height="100">
+<img src="img/dataset43.jpg"  width="130" height="100">
+<img src="img/dataset44.jpg"  width="130" height="100">
+<img src="img/dataset45.jpg"  width="130" height="100">
+<img src="img/dataset46.jpg"  width="130" height="100">
 </div>
 
 
@@ -117,7 +117,7 @@ pip install tensorboardX
 
 #### Download and Import Requred Data:
 
-1. Download and unzip content of [this link](https://drive.google.com/uc?id=1xYHGJR-UWccPzbIuzMU_yf0bSkQ42qQh) into `dataset/`
+1. Download and unzip content of [this link](https://drive.google.com/uc?id=1xYHGJR-UWccPzbIuzMU_yf0bSkQ42qQh) and [this link](https://drive.google.com/file/d/1cXYGRWDcvpxmc54gyAqvfLYPxaSshgV9/view?usp=sharing) into `dataset/`
 
 2. Download and import the content of [this link](https://drive.google.com/uc?id=1vuwTOMjXC3BznGUiOgT9k58ermUf3XEH) and [this link](https://dl.fbaipublicfiles.com/mae/pretrain/mae_pretrain_vit_base.pth) into `trackers/MixFormer/models/`
 
