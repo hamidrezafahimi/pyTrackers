@@ -11,33 +11,33 @@ This repository contains implementation of some major correlation filter based t
 ### Sample images from dataset:
 - Sample images from our VIOT-2 dataset
 <br/>
-<img src="img/dataset/dataset11.jpg"  width="200" height="150">
-<img src="img/dataset/dataset12.jpg"  width="200" height="150">
-<img src="img/dataset/dataset13.jpg"  width="200" height="150">
-<img src="img/dataset/dataset14.jpg"  width="200" height="150">
-<img src="img/dataset/dataset15.jpg"  width="200" height="150">
-<img src="img/dataset/dataset16.jpg"  width="200" height="150">
+<img src="img/dataset11.jpg"  width="135" height="110">
+<img src="img/dataset12.jpg"  width="135" height="110">
+<img src="img/dataset13.jpg"  width="135" height="110">
+<img src="img/dataset14.jpg"  width="135" height="110">
+<img src="img/dataset15.jpg"  width="135" height="110">
+<img src="img/dataset16.jpg"  width="135" height="110">
 <br/>
-<img src="img/dataset/dataset21.jpg"  width="200" height="150">
-<img src="img/dataset/dataset22.jpg"  width="200" height="150">
-<img src="img/dataset/dataset23.jpg"  width="200" height="150">
-<img src="img/dataset/dataset24.jpg"  width="200" height="150">
-<img src="img/dataset/dataset25.jpg"  width="200" height="150">
-<img src="img/dataset/dataset26.jpg"  width="200" height="150">
+<img src="img/dataset21.jpg"  width="135" height="110">
+<img src="img/dataset22.jpg"  width="135" height="110">
+<img src="img/dataset23.jpg"  width="135" height="110">
+<img src="img/dataset24.jpg"  width="135" height="110">
+<img src="img/dataset25.jpg"  width="135" height="110">
+<img src="img/dataset26.jpg"  width="135" height="110">
 <br/>
-<img src="img/dataset/dataset31.jpg"  width="200" height="150">
-<img src="img/dataset/dataset32.jpg"  width="200" height="150">
-<img src="img/dataset/dataset33.jpg"  width="200" height="150">
-<img src="img/dataset/dataset34.jpg"  width="200" height="150">
-<img src="img/dataset/dataset35.jpg"  width="200" height="150">
-<img src="img/dataset/dataset36.jpg"  width="200" height="150">
+<img src="img/dataset31.jpg"  width="135" height="110">
+<img src="img/dataset32.jpg"  width="135" height="110">
+<img src="img/dataset33.jpg"  width="135" height="110">
+<img src="img/dataset34.jpg"  width="135" height="110">
+<img src="img/dataset35.jpg"  width="135" height="110">
+<img src="img/dataset36.jpg"  width="135" height="110">
 <br/>
-<img src="img/dataset/dataset31.jpg"  width="200" height="150">
-<img src="img/dataset/dataset32.jpg"  width="200" height="150">
-<img src="img/dataset/dataset33.jpg"  width="200" height="150">
-<img src="img/dataset/dataset34.jpg"  width="200" height="150">
-<img src="img/dataset/dataset35.jpg"  width="200" height="150">
-<img src="img/dataset/dataset36.jpg"  width="200" height="150">
+<img src="img/dataset31.jpg"  width="135" height="110">
+<img src="img/dataset32.jpg"  width="135" height="110">
+<img src="img/dataset33.jpg"  width="135" height="110">
+<img src="img/dataset34.jpg"  width="135" height="110">
+<img src="img/dataset35.jpg"  width="135" height="110">
+<img src="img/dataset36.jpg"  width="135" height="110">
 <br/>
 
 
@@ -45,17 +45,18 @@ This repository contains implementation of some major correlation filter based t
 - Gradient-descent-optimization-based Correction of
 robot’s visual odometry drift utilizing ArUco markers placed
 in the field.
-<img src="img/sample_odometry.png"   height="300">
+<img src="img/sample_odometry.png" height="300">
 
 ### sample result
 - Tracker precision comparison over Mixformer and
 KYS trackers for pure trackers, trackers enhanced with VIOT,
 and trackers enhanced with our extension
 
-<img src="img/DiMP.png"  width="300" height="250">
-<img src="img/ToMP.png"  width="300" height="250">
-<img src="img/KYS.png"  width="300" height="250">
-<img src="img/MixFormer.png"  width="300" height="250">
+<img src="img/DiMP.png"  width="250" height="220">
+<img src="img/ToMP.png"  width="250" height="220">
+<br/>
+<img src="img/KYS.png"  width="250" height="220">
+<img src="img/MixFormer.png"  width="250" height="220">
 <br/>
 <img src="img/Legend.png"  width="603">
 
