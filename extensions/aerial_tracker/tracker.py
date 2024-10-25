@@ -162,12 +162,46 @@ class AerialTracker(CameraKinematics):
         #    cv.circle(newMap, (pt_next[0], pt_next[1]), 2, 255, 2)
 
 
-    def updateOccupancyMap(self):
+    def updateOccupancyMap(self, frame_path, imu_meas, cam_ps):
+        z_axis = []
+        x_axis = []
+        y_axis = []
+
         current_frame = cv.imread(frame_path)
         normal_mat = self.midas_object.seeDepth(current_frame)
         h, w = normal_mat.shape
-        DIST = np.zeros((h,w))
+        normal_mat = self.midas_object.reshape_matrix_by_percentage(normal_mat, 2, 2)
 
+        for x in range(h):
+            for y in range(w):
+                r_max ,r_min = self.point_to_r_max_min(y, x, imu_meas, cam_ps, 3)
+                dist = ((normal_mat[x, y] - 0) / (255 - 0)) * (r_max -r_min) + r_min
+                data = [r_min, dist, r_max]
+                data = self.midas_object.getNormalized(0, 1, data)
+                px2pose = self.pixel_to_pose(y, x, imu_meas, cam_ps, data[1]*3)
+                x_axis.append(px2pose[0])
+                y_axis.append(px2pose[1])
+                z_axis.append(px2pose[2])
+        
+        x_axis = np.array(x_axis)
+        y_axis = np.array(y_axis)
+        z_axis = np.array(z_axis)
+        x_min, x_max = x_axis.min(), x_axis.max()
+        y_min, y_max = y_axis.min(), y_axis.max()
+        z_min, z_max = z_axis.min(), z_axis.max()
+
+        if (self.extraVis):
+            height_pix = int((x_max - x_min)/self.__mppr)+10
+            width_pix = int((y_max - y_min)/self.__mppr)+10
+            new_map = np.zeros((height_pix, width_pix))
+            for idx in range(len(x_axis)):
+                x_idx = int((x_axis[idx]-x_min)/self.__mppr)
+                y_idx = int((y_axis[idx]-y_min)/self.__mppr)
+                new_map[y_idx, x_idx] = z_axis[idx]
+            ret,thresh = cv.threshold(new_map, 1.5, 255, 0)
+            frame = cv.resize(thresh, (100,100))
+            cv.imshow("window_name", frame)
+        
     def predict(self, imu_meas, cam_ps, object_pose, t, _dt, frame_path, score_map=None):
         self.updateOccupancyMap()
         # buffer last object poses
