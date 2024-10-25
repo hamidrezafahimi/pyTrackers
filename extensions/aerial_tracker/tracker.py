@@ -34,6 +34,7 @@ class AerialTracker(CameraKinematics):
         #self.__mapWidth = map_width
         #self.__mapHeight = map_height
         self.__mppr = mppr
+        self.occupancy_map = np.zeros((self.__mapHeight_pix, self.__mapWidth_pix, 1), np.uint8)
         # self.ax = plt.figure().add_subplot(111, projection='3d')
         # self.ax.view_init(elev=-140, azim=-60)
         self.min_r_meter = 3
@@ -111,7 +112,7 @@ class AerialTracker(CameraKinematics):
     # def updateMap(self, est_pos_ned, fitted_spline=None):
     def updateMap(self, prob_points_ned, fitted_spline=None):
         # TODO: Only render the area which is to be cropped
-        self.map = np.zeros((self.__mapHeight_pix, self.__mapWidth_pix, 1), np.uint8)
+        self.map = self.occupancy_map.copy()
         if self.extraVis:
             self.mapVis = self.map.copy()
         
@@ -161,55 +162,15 @@ class AerialTracker(CameraKinematics):
         #    cv.circle(newMap, (pt_next[0], pt_next[1]), 2, 255, 2)
 
 
-    def predict(self, imu_meas, cam_ps, object_pose, t, _dt, frame_path, score_map=None):
-        # buffer last object poses
-
+    def updateOccupancyMap(self):
         current_frame = cv.imread(frame_path)
         normal_mat = self.midas_object.seeDepth(current_frame)
         h, w = normal_mat.shape
         DIST = np.zeros((h,w))
 
-        # print(self.point_to_pose(0,0, imu_meas, cam_ps))
-
-        for i in range(h):
-            for j in range(w):
-                r_max ,r_min = self.point_to_r_max_min(j, i, imu_meas, cam_ps, 3)
-                dist = ((normal_mat[i, j] - 0) / (255 - 0)) * (r_max -r_min) + r_min
-
-                data = [r_min, dist, r_max]
-                data = self.midas_object.getNormalized(0, 1, data)
-                self.pixel_to_pose(j, i, imu_meas, cam_ps, data[1]*3)
-                DIST[i,j] = dist
-                # print ("Pixel h: " + str(i) + " w:" + str(j) + " Dist Value: " + str(dist) + " Midas Value: " + str(normal_mat[i, j]))
-        
-        min_val = np.min(DIST)
-        max_val = np.max(DIST)
-        print("min_val : " + str(min_val))
-        print("max_val : " + str(max_val))
-        # output_path = root_path + "/extensions/midas/output/" + frame_path[-12:-4] + ".png"
-        # self.midas_object.writeDepth(normal_mat, output_path)
-        self.midas_object.showDepth("DIST", DIST)
-        
-
-
-        # # defining surface and axes
-        # x = np.arange(DIST.shape[1])
-        # y = np.arange(DIST.shape[0])
-        # x, y = np.meshgrid(x, y)
-        # # Plot the 3D surface
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111, projection='3d')
-        # ax.plot_surface(x, y, DIST, cmap='viridis')
-        # # Add labels and a color bar for reference
-        # ax.set_xlabel('X axis')
-        # ax.set_ylabel('Y axis')
-        # ax.set_zlabel('Z axis')
-        # ax.set_title('3D Surface Plot of 2D Matrix')
-        # fig.colorbar(ax.plot_surface(x, y, DIST, cmap='viridis'), ax=ax, shrink=0.5, aspect=5)
-
-        # plt.show()
-        
-
+    def predict(self, imu_meas, cam_ps, object_pose, t, _dt, frame_path, score_map=None):
+        self.updateOccupancyMap()
+        # buffer last object poses
         if object_pose is None:
             obj_xy_ned = None
         else:
@@ -224,7 +185,6 @@ class AerialTracker(CameraKinematics):
         pan_scan, cornersInMap = self.scan(imu_meas, cam_ps)
         picture = self.takePicture(cornersInMap)
         return self.getOptimalROI(picture)
-        # return self.getOptimalROI(score_map, pan_scan)
 
     def takePicture(self, cornersInMap):
         if self.map is None:
