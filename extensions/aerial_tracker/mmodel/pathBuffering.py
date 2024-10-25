@@ -11,7 +11,7 @@ class PathBufferer1D:
         self.recBufLen = record_buf_len
         self.estBufLen = estimate_buf_len
         self.estimateBuffer = np.zeros((self.estBufLen, 2))
-        self.maxTimeStep = 0.5
+        self.maxTimeStep = 0.2
         self.minTimeStep = 0.01
         self.isEstBufReady = False
         self.lastEstBufUpdate = None

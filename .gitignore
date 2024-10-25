@@ -19,6 +19,8 @@ results-tomp/
 *.tar
 *.pdf
 *.swp
+extensions/midas/weights/
+extensions/midas/output/
 # /eval/test
 # .eval/log_test.txt
 # .eval/log_test_vot2016.txt

@@ -12,6 +12,10 @@ import time
 import copy
 from .mmodel import EKFEstimator
 import pandas as pd
+
+# For Midas
+from extensions.midas.midas import Midas
+
 ## NOTE:
 # The geographic directions in the map image:
 # --> N
@@ -51,12 +55,13 @@ class AerialTracker(CameraKinematics):
         self.map = None
         self.extraVis = False
         self.show_demo = False
-        self.doPanScan = True
+        self.doPanScan = False
         ## Homographic transform - Simulation of image capturing from probabilistic map
         self._imageCorners = np.array([[0, 0],[w-1, 0],[w-1, h-1],[0, h-1]])
         self._pixelMapSize = (w, h)
         self.iter = 0
         self.picturing_thresh = 80
+        self.midas_object = Midas("midas_v21_384.pt", "midas_v21_384")
 
     def scan(self, imu_meas, cam_ps):
         if self.map is None:
@@ -113,21 +118,9 @@ class AerialTracker(CameraKinematics):
         if prob_points_ned is None:
             return
 
-
-        # ts = self.object_pose_buffer[:,0]
-        # xs = self.object_pose_buffer[:,1]
-        # ys = self.object_pose_buffer[:,2]
-        # print (est_pos_ned)
-        # print (xs)
-        # print ('---------------')
-        # prob_points_ned = predict_linear_probs(ts, xs, ys, self.const_dt, self.v_std_dev, 
-        #                                        self.beta_std_dev, self.samples_num)
-        # prob_points_ned = predict_linear_probs(ts, xs, ys, self.const_dt, est_pos_ned[0],
-        #                                        est_pos_ned[1], self.v_std_dev, 
-        #                                        self.beta_std_dev, self.samples_num)
-        for k in range(prob_points_ned.shape[0]):
-            df_marker = pd.DataFrame({'Xs':[prob_points_ned[k,1]], 'Ys':[prob_points_ned[k,2]], 'Time':[prob_points_ned[k,0]]})
-            df_marker.to_csv("/home/hamid/sparsepoints.csv", mode='a', index=False, header=False)
+        # for k in range(prob_points_ned.shape[0]):
+        #     df_marker = pd.DataFrame({'Xs':[prob_points_ned[k,1]], 'Ys':[prob_points_ned[k,2]], 'Time':[prob_points_ned[k,0]]})
+        #     df_marker.to_csv("/home/hamid/sparsepoints.csv", mode='a', index=False, header=False)
             
         prob_points_pix = NED2IMG_array(prob_points_ned, self.__minX, self.__minY, self.__mppr)
         # print (prob_points_ned)
@@ -168,8 +161,55 @@ class AerialTracker(CameraKinematics):
         #    cv.circle(newMap, (pt_next[0], pt_next[1]), 2, 255, 2)
 
 
-    def predict(self, imu_meas, cam_ps, object_pose, t, _dt, score_map=None):
+    def predict(self, imu_meas, cam_ps, object_pose, t, _dt, frame_path, score_map=None):
         # buffer last object poses
+
+        current_frame = cv.imread(frame_path)
+        normal_mat = self.midas_object.seeDepth(current_frame)
+        h, w = normal_mat.shape
+        DIST = np.zeros((h,w))
+
+        # print(self.point_to_pose(0,0, imu_meas, cam_ps))
+
+        for i in range(h):
+            for j in range(w):
+                r_max ,r_min = self.point_to_r_max_min(j, i, imu_meas, cam_ps, 3)
+                dist = ((normal_mat[i, j] - 0) / (255 - 0)) * (r_max -r_min) + r_min
+
+                data = [r_min, dist, r_max]
+                data = self.midas_object.getNormalized(0, 1, data)
+                self.pixel_to_pose(j, i, imu_meas, cam_ps, data[1]*3)
+                DIST[i,j] = dist
+                # print ("Pixel h: " + str(i) + " w:" + str(j) + " Dist Value: " + str(dist) + " Midas Value: " + str(normal_mat[i, j]))
+        
+        min_val = np.min(DIST)
+        max_val = np.max(DIST)
+        print("min_val : " + str(min_val))
+        print("max_val : " + str(max_val))
+        # output_path = root_path + "/extensions/midas/output/" + frame_path[-12:-4] + ".png"
+        # self.midas_object.writeDepth(normal_mat, output_path)
+        self.midas_object.showDepth("DIST", DIST)
+        
+
+
+        # # defining surface and axes
+        # x = np.arange(DIST.shape[1])
+        # y = np.arange(DIST.shape[0])
+        # x, y = np.meshgrid(x, y)
+        # # Plot the 3D surface
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111, projection='3d')
+        # ax.plot_surface(x, y, DIST, cmap='viridis')
+        # # Add labels and a color bar for reference
+        # ax.set_xlabel('X axis')
+        # ax.set_ylabel('Y axis')
+        # ax.set_zlabel('Z axis')
+        # ax.set_title('3D Surface Plot of 2D Matrix')
+        # fig.colorbar(ax.plot_surface(x, y, DIST, cmap='viridis'), ax=ax, shrink=0.5, aspect=5)
+
+        # plt.show()
+        
+
         if object_pose is None:
             obj_xy_ned = None
         else:

@@ -25,6 +25,8 @@ class EKFEstimator:
         K = 200
         self.gen = predict_pose_probs(None, v_std_dev, beta_std_dev, K)
         next(self.gen)
+        # self.path_history = np.array([])
+        self.last_y = None
 
     def update(self, y, t, dt):
         #print("a call to update =============== ")
@@ -33,29 +35,39 @@ class EKFEstimator:
             self.model_x.rememebr([y[0], t])
             self.model_y.rememebr([y[1], t])
             y = [y[0], y[1]] #TODO: Remove this after adding 3d pose estimation feature
+            # self.last_y = y
 
         self.estimate(t, dt, y)
 
         if y is None:
             nxpt = [t+dt, self.x[0][0], self.x[1][0]]
             data = (None, nxpt)
+            # data = (None, nxpt, None)
         elif not self.model_x.curve_times is None and self.model_x.curve_times.shape[0] >= 2:
-            ## Indexing such that 'old_point' and 'new_point' are lists of scalars rather than nested np arrays
+            ## Indexing such that 'old_point' and 'new_point' are lists of scalars rather 
+            # than nested np arrays
             old_point = [self.model_x.curve_times[-2], self.model_x.curve_points[-2][0], self.model_y.curve_points[-2][0]]
             new_point = [self.model_x.curve_times[-1], self.model_x.curve_points[-1][0], self.model_y.curve_points[-1][0]]
             data = ((old_point, new_point), None)
-            # if y is None:
-            #     return None, None, None
+            # data = ((old_point, new_point), None, (self.last_y, y))
         else:
             return None, None, None
 
+        if self.last_y is None:
+            print(self.last_y)
+        else:
+            print("[", t, ",", self.last_y[0], ",", self.last_y[1], "],")
+
+        self.last_y = y
         # if self.model_x.ready:
         #     return [self.x[0][0], self.x[1][0]], \
         #         np.hstack([self.model_x.curve_points, self.model_y.curve_points]), \
         #         self.model_x.curve_times
         # else:
         #     return None, None, None
+        # print("---------- given data: ", data)
         prob_points = self.gen.send(data)
+        # print(prob_points)
         return prob_points, \
             np.hstack([self.model_x.curve_points, self.model_y.curve_points]), \
             self.model_x.curve_times

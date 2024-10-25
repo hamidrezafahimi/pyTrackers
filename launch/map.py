@@ -1,12 +1,38 @@
+import cv2 as cv
 import numpy as np
-from scipy.spatial.transform import Rotation as R
-import sys
+import os, sys
+# from .panorama_scanner import panorama_scannera 
+import matplotlib.pyplot as plt
 from pathlib import Path
-root_path = str(Path(__file__).parent.resolve()) + "/../.."
-sys.path.insert(0, root_path)
-from lib.utils import make_DCM
-from lib.utils import get_ned_wrt_ref
+import copy
 
+def get_ned_wrt_ref(ref_loc, loc):
+    # y_ref, x_ref, _, _ = utm.from_latlon(ref_loc[0], ref_loc[1])
+    # pose_ref_utm = np.array( [x_ref, y_ref, -ref_loc[2]] )
+
+    # y, x, _, _ = utm.from_latlon(loc[0], loc[1])
+    # pose_utm = [x,y,-loc[2]]
+    pose_ned = loc-ref_loc
+    return np.array(pose_ned)
+
+def make_DCM(eul):
+
+    phi = eul[0]
+    theta = eul[1]
+    psi = eul[2]
+
+    DCM = np.zeros((3,3))
+    DCM[0,0] = np.cos(psi)*np.cos(theta)
+    DCM[0,1] = np.sin(psi)*np.cos(theta)
+    DCM[0,2] = -np.sin(theta)
+    DCM[1,0] = np.cos(psi)*np.sin(theta)*np.sin(phi)-np.sin(psi)*np.cos(phi)
+    DCM[1,1] = np.sin(psi)*np.sin(theta)*np.sin(phi)+np.cos(psi)*np.cos(phi)
+    DCM[1,2] = np.cos(theta)*np.sin(phi)
+    DCM[2,0] = np.cos(psi)*np.sin(theta)*np.cos(phi)+np.sin(psi)*np.sin(phi)
+    DCM[2,1] = np.sin(psi)*np.sin(theta)*np.cos(phi)-np.cos(psi)*np.sin(phi)
+    DCM[2,2] = np.cos(theta)*np.cos(phi)
+
+    return DCM
 
 class CameraKinematics:
 
@@ -176,19 +202,10 @@ class CameraKinematics:
     def point_to_r_max_min(self, pix_x, pix_y, imu_meas, cam_ps, roof_height):
         cam_z = self.get_cam_pos_ned(cam_ps)[2]
         b_vec = self.cam_to_body([pix_x-1,pix_y-1,2,2])
-        # dir vec
         inertia_dir = self.body_to_inertia(b_vec, imu_meas)
         r_min = np.linalg.norm(self.scale_vector(inertia_dir, cam_ps[2]+roof_height))
         r_max = np.linalg.norm(self.scale_vector(inertia_dir, cam_ps[2]))
         return r_max, r_min
-    
-    def pixel_to_pose(self, pix_x, pix_y, imu_meas, cam_ps, roof_height):
-        cam_pos = self.get_cam_pos_ned(cam_ps)
-        b_vec = self.cam_to_body([pix_x-1,pix_y-1,2,2])
-        # print(b_vec)
-        inertia_dir = self.body_to_inertia(b_vec, imu_meas)
-        return self.scale_vector(inertia_dir, cam_ps[2] - roof_height) + cam_pos
-
 
     def get_cam_pos_ned(self, cam_ps):
         return get_ned_wrt_ref(self.ref_loc, cam_ps)
@@ -210,3 +227,46 @@ class CameraKinematics:
                     int(center_est[1]-rect_sample[3]/2), rect_sample[2], rect_sample[3]) # rect_est
         else:
             return None
+
+
+# Add the parent directory to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'extensions')))
+# from midas.midas import Midas
+data_root = "/home/hamid/w/REPOS/pyTrackers/extensions/midas/output/"
+data_path = str(Path(__file__).parent.resolve()) + "/../dataset/VIOT/park_mavic_1/"
+camera_states = np.loadtxt(data_path+'camera_states.txt', delimiter=',')
+num_of_numbers = camera_states.shape[0]
+
+print(len(camera_states[0]))
+kin = CameraKinematics(copy.deepcopy(camera_states[0, 1:4]),
+                    cx=220.0, cy=165.0, 
+                    w=440,
+                    h=330, hfov=66.0)
+
+for i in range(2, num_of_numbers):
+    # print(camera_states[i, 1])
+    img_path = data_root + '%0*d' % (8, i) + ".png"
+    normal_mat = cv.imread(img_path)
+    h, w, _ = normal_mat.shape
+    DIST = np.zeros((h,w))
+
+    # print(self.point_to_pose(0,0, imu_meas, cam_ps))
+    
+    for i in range(h):
+        for j in range(w):
+            r_min ,r_max = kin.point_to_r_max_min(j, i, camera_states[i,4:7], camera_states[i,1:4], 3)
+            print(normal_mat[i, j])
+            print(r_min)
+            # dist = (normal_mat[i, j] * (r_max -r_min) / 255) + r_min
+            old_min, old_max = 0, 255
+            new_min, new_max = r_max, r_min 
+            # dist = ((normal_mat[i, j] - 0) / (255 - 0)) * (r_max -r_min) + r_min
+            dist = new_min + (normal_mat[i, j][0] - old_min) * (new_max - new_min) / (old_max - old_min)
+            print(dist)
+            DIST[i,j] = dist
+            # print ("Pixel h: " + str(i) + " w:" + str(j) + " Dist Value: " + str(dist) + " Midas Value: " + str(normal_mat[i, j]))
+        
+
+    cv.imshow("normal_mat", DIST)
+    cv.waitKey(1)
+    
