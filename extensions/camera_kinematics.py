@@ -180,6 +180,8 @@ class CameraKinematics:
         inertia_dir = self.body_to_inertia(b_vec, imu_meas)
         r_min = np.linalg.norm(self.scale_vector(inertia_dir, cam_ps[2]+roof_height))
         r_max = np.linalg.norm(self.scale_vector(inertia_dir, cam_ps[2]))
+        # print("R data:", cam_ps[2], r_max, r_min, pix_x, pix_y, imu_meas)
+        # print("R2 data:", cam_ps, inertia_dir, b_vec, self.scale_vector(inertia_dir, cam_ps[2]))
         return r_max, r_min
     
     def pixel_to_pose(self, pix_x, pix_y, imu_meas, cam_ps, roof_height):

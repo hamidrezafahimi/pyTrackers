@@ -24,31 +24,31 @@ def read_image(img):
 
     return img
 
-def showDepth(depth, bits=1):
-    grayscale = True
-    if not grayscale:
-        bits = 1
+# def showDepth(depth, bits=1):
+#     grayscale = True
+#     if not grayscale:
+#         bits = 1
 
-    if not np.isfinite(depth).all():
-        depth=np.nan_to_num(depth, nan=0.0, posinf=0.0, neginf=0.0)
-        print("WARNING: Non-finite depth values present")
+#     if not np.isfinite(depth).all():
+#         depth=np.nan_to_num(depth, nan=0.0, posinf=0.0, neginf=0.0)
+#         print("WARNING: Non-finite depth values present")
 
-    depth_min = depth.min()
-    depth_max = depth.max()
+#     depth_min = depth.min()
+#     depth_max = depth.max()
 
-    max_val = (2**(8*bits))-1
+#     max_val = (2**(8*bits))-1
 
-    if depth_max - depth_min > np.finfo("float").eps:
-        out = max_val * (depth - depth_min) / (depth_max - depth_min)
-    else:
-        out = np.zeros(depth.shape, dtype=depth.dtype)
+#     if depth_max - depth_min > np.finfo("float").eps:
+#         out = max_val * (depth - depth_min) / (depth_max - depth_min)
+#     else:
+#         out = np.zeros(depth.shape, dtype=depth.dtype)
 
-    if not grayscale:
-        out = cv2.applyColorMap(np.uint8(out), cv2.COLORMAP_INFERNO)
+#     if not grayscale:
+#         out = cv2.applyColorMap(np.uint8(out), cv2.COLORMAP_INFERNO)
     
-    frm = cv2.resize(out.astype("uint8"), (440, 330), interpolation = cv2.INTER_NEAREST)
-    cv2.imshow("Depth", frm)
-    return
+#     frm = cv2.resize(out.astype("uint8"), (440, 330), interpolation = cv2.INTER_NEAREST)
+#     cv2.imshow("Depth", frm)
+#     return
 
 
 def process(device, model, model_type, image, input_size, target_size, optimize, use_camera):

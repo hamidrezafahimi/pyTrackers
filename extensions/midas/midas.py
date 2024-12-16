@@ -53,6 +53,7 @@ class Midas():
         
         frm = cv2.resize(out.astype("uint8"), (440, 330), interpolation = cv2.INTER_NEAREST)
         cv2.imshow(window_name, frm)
+        cv2.waitKey(1)
         return
     
     def process(self, device, model, model_type, image, input_size, target_size, optimize, use_camera):
@@ -84,7 +85,7 @@ class Midas():
 
         if self.first_execution or not use_camera:
             height, width = sample.shape[2:]
-            print(f"    Input resized to {width}x{height} before entering the encoder")
+            # print(f"    Input resized to {width}x{height} before entering the encoder")
             self.first_execution = False
 
         prediction = model.forward(sample)

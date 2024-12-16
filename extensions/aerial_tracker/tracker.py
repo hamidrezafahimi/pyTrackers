@@ -12,6 +12,7 @@ import time
 import copy
 from .mmodel import EKFEstimator
 import pandas as pd
+import time
 
 # For Midas
 from extensions.midas.midas import Midas
@@ -34,12 +35,14 @@ class AerialTracker(CameraKinematics):
         #self.__mapWidth = map_width
         #self.__mapHeight = map_height
         self.__mppr = mppr
-        self.occupancy_map = np.zeros((self.__mapHeight_pix, self.__mapWidth_pix, 1), np.uint8)
+        self.__occMapHeight = 3
+        self.__occMapAltThresh = self.__occMapHeight / 2
         # self.ax = plt.figure().add_subplot(111, projection='3d')
         # self.ax.view_init(elev=-140, azim=-60)
         self.min_r_meter = 3
         self.max_r_meter = 35
         self.__initNormalization()
+        self.occupancy_map = np.ones((self.__mapHeight_pix, self.__mapWidth_pix, 1), np.uint8)*0.01
         self.pan_width = 1080
         # self.initGlobalMap()
         #self.v_std_dev = 0.5
@@ -54,7 +57,7 @@ class AerialTracker(CameraKinematics):
         self.object_points_pix = []
         self.estimator = EKFEstimator()
         self.map = None
-        self.extraVis = False
+        self.extraVis = True
         self.show_demo = False
         self.doPanScan = False
         ## Homographic transform - Simulation of image capturing from probabilistic map
@@ -112,7 +115,7 @@ class AerialTracker(CameraKinematics):
     # def updateMap(self, est_pos_ned, fitted_spline=None):
     def updateMap(self, prob_points_ned, fitted_spline=None):
         # TODO: Only render the area which is to be cropped
-        self.map = self.occupancy_map.copy()
+        self.map = np.zeros((self.__mapHeight_pix, self.__mapWidth_pix, 1), np.uint8)
         if self.extraVis:
             self.mapVis = self.map.copy()
         
@@ -166,23 +169,30 @@ class AerialTracker(CameraKinematics):
         z_axis = []
         x_axis = []
         y_axis = []
-
         current_frame = cv.imread(frame_path)
+        # Get the mono depth image, resized to each pixel equal to ? percent of original w/h
         normal_mat = self.midas_object.seeDepth(current_frame)
+        # In our example, the followings are 55x55
         h, w = normal_mat.shape
-        normal_mat = self.midas_object.reshape_matrix_by_percentage(normal_mat, 2, 2)
-
+        DIST = np.zeros((h,w))
+        print(h, w)
+        # In our example, the followings are 330x440 (This is the size of original image)
+        H, W = current_frame.shape[0], current_frame.shape[1]
         for x in range(h):
             for y in range(w):
-                r_max ,r_min = self.point_to_r_max_min(y, x, imu_meas, cam_ps, 3)
-                dist = ((normal_mat[x, y] - 0) / (255 - 0)) * (r_max -r_min) + r_min
+                # These are where, in the big image, a point corresponding to the small image must be
+                X, Y = int((W/w)*(x+0.5)), int((H/h)*(y+0.5))
+                r_max, r_min = self.point_to_r_max_min(X, Y, imu_meas, cam_ps, self.__occMapHeight)
+                dist = (normal_mat[x, y] / 255) * (r_max - r_min) + r_min
                 data = [r_min, dist, r_max]
                 data = self.midas_object.getNormalized(0, 1, data)
-                px2pose = self.pixel_to_pose(y, x, imu_meas, cam_ps, data[1]*3)
+                px2pose = self.pixel_to_pose(X, Y, imu_meas, cam_ps, (1 - data[1])*self.__occMapHeight)
+                DIST[x,y] = dist
                 x_axis.append(px2pose[0])
                 y_axis.append(px2pose[1])
                 z_axis.append(px2pose[2])
         
+        self.midas_object.showDepth("Metric Scale", DIST)
         x_axis = np.array(x_axis)
         y_axis = np.array(y_axis)
         z_axis = np.array(z_axis)
@@ -190,20 +200,20 @@ class AerialTracker(CameraKinematics):
         y_min, y_max = y_axis.min(), y_axis.max()
         z_min, z_max = z_axis.min(), z_axis.max()
 
+        for i, _ in enumerate(x_axis):
+            ptx, pty = NED2IMG_single(x_axis[i], y_axis[i], self.__minX, self.__minY, self.__mppr)
+            self.occupancy_map[pty, ptx] = int((z_axis[i]/self.__occMapHeight)*255)
+            # if z_axis[i] > self.__occMapAltThresh:
+            #     self.occupancy_map[pty, ptx] = 255
+            # else:
+            #     self.occupancy_map[pty, ptx] = 0
+
         if (self.extraVis):
-            height_pix = int((x_max - x_min)/self.__mppr)+10
-            width_pix = int((y_max - y_min)/self.__mppr)+10
-            new_map = np.zeros((height_pix, width_pix))
-            for idx in range(len(x_axis)):
-                x_idx = int((x_axis[idx]-x_min)/self.__mppr)
-                y_idx = int((y_axis[idx]-y_min)/self.__mppr)
-                new_map[y_idx, x_idx] = z_axis[idx]
-            ret,thresh = cv.threshold(new_map, 1.5, 255, 0)
-            frame = cv.resize(thresh, (100,100))
-            cv.imshow("window_name", frame)
+            cv.imshow("Occupancy Map", self.occupancy_map)
+            cv.waitKey()
         
     def predict(self, imu_meas, cam_ps, object_pose, t, _dt, frame_path, score_map=None):
-        self.updateOccupancyMap()
+        self.updateOccupancyMap(frame_path, imu_meas, cam_ps)
         # buffer last object poses
         if object_pose is None:
             obj_xy_ned = None

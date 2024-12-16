@@ -27,9 +27,7 @@ class MidasNet(BaseModel):
 
         use_pretrained = False if path is None else True
 
-        print("in1")
         self.pretrained, self.scratch = _make_encoder(backbone="resnext101_wsl", features=features, use_pretrained=use_pretrained)
-        print("in2")
 
         self.scratch.refinenet4 = FeatureFusionBlock(features)
         self.scratch.refinenet3 = FeatureFusionBlock(features)

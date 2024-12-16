@@ -230,7 +230,7 @@ class PyTracker:
                                                     self.wrt_leg)
                 target_pose = [states[idx,0], tgt_pos[0], tgt_pos[1]]
             else:
-                _, cam_pos = kin.rect_to_pose(bbox, states[idx,4:7], states[idx,1:4])
+                _, cam_pos = kin.rect_to_pose(None, states[idx,4:7], states[idx,1:4])
             
             # print(states.shape[0], idx)
             if idx+1 < states.shape[0]:
@@ -360,4 +360,4 @@ class PyTracker:
             cv2.imshow('demo-kpt', frame)
             # cv2.imwrite('/home/hamid/ffs/i{}.jpg'.format(self.it_num), frame)
             self.it_num += 1
-            cv2.waitKey(1)
+            cv2.waitKey()

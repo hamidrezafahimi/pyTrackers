@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+from pathlib import Path
 from .backbones.beit import (
     _make_pretrained_beitl16_512,
     _make_pretrained_beitl16_384,
@@ -200,7 +200,8 @@ def _make_resnet_backbone(resnet):
 
 
 def _make_pretrained_resnext101_wsl(use_pretrained):
-    resnet = torch.hub.load("facebookresearch/WSL-Images", "resnext101_32x8d_wsl")
+    repo_dir = str(Path(__file__).parent.resolve()) + "/../weights/WSL-Images"
+    resnet = torch.hub.load(repo_dir, "resnext101_32x8d_wsl", source="local")
     return _make_resnet_backbone(resnet)
 
 
